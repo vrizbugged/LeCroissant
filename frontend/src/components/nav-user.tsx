@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import {
   BellIcon,
   CreditCardIcon,
@@ -28,6 +29,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { authApi } from "@/lib/api"
+import { toast } from "sonner"
 
 export function NavUser({
   user,
@@ -39,6 +42,38 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      // Call logout API
+      await authApi.logout()
+      
+      // Clear localStorage
+      localStorage.removeItem("token")
+      localStorage.removeItem("auth_token")
+      localStorage.removeItem("user")
+      
+      // Dispatch event untuk update UI
+      window.dispatchEvent(new Event("authChanged"))
+      
+      // Redirect to login
+      router.push("/login")
+      router.refresh()
+      
+      toast.success("Logout berhasil")
+    } catch (error) {
+      console.error("Error logging out:", error)
+      // Even if API fails, clear local storage and redirect
+      localStorage.removeItem("token")
+      localStorage.removeItem("auth_token")
+      localStorage.removeItem("user")
+      window.dispatchEvent(new Event("authChanged"))
+      router.push("/login")
+      router.refresh()
+    }
+  }
 
   return (
     <SidebarMenu>
@@ -85,7 +120,7 @@ export function NavUser({
             <DropdownMenuSeparator />
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOutIcon />
               Log out
             </DropdownMenuItem>

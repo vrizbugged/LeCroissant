@@ -94,16 +94,17 @@ export const columns: ColumnDef<OrderResource>[] = [
     },
   },
   {
-    accessorKey: "user",
+    accessorKey: "client",
     header: "Customer Name",
     cell: ({ row }) => {
-      const user = row.original.user
+      const client = row.original.client
+      const user = row.original.user // Fallback
       return (
         <div className="font-medium">
-          {user?.name || "N/A"}
-          {user?.company_name && (
+          {client?.name || user?.name || "N/A"}
+          {(client?.company_name || user?.company_name) && (
             <div className="text-sm text-muted-foreground">
-              {user.company_name}
+              {client?.company_name || user?.company_name}
             </div>
           )}
         </div>

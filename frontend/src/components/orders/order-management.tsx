@@ -120,10 +120,12 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{order.user?.name || 'N/A'}</div>
-                          {order.user?.company_name && (
+                          <div className="font-medium">
+                            {order.client?.name || order.user?.name || 'N/A'}
+                          </div>
+                          {(order.client?.company_name || order.user?.company_name) && (
                             <div className="text-sm text-muted-foreground">
-                              {order.user.company_name}
+                              {order.client?.company_name || order.user?.company_name}
                             </div>
                           )}
                         </div>

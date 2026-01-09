@@ -26,78 +26,56 @@ import {
   SidebarTrigger,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
 
-// Dynamic import NavUser to prevent hydration mismatch with Radix UI DropdownMenu
-// Radix UI generates random IDs that differ between server and client
 const NavUser = dynamic(
   () => import("@/components/nav-user").then((mod) => ({ default: mod.NavUser })),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 )
 
 const navItems = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: LayoutDashboardIcon,
-  },
-  {
-    title: "Manajemen Produk",
-    url: "/dashboard/products",
-    icon: PackageIcon,
-  },
-  {
-    title: "Manajemen Pesanan",
-    url: "/dashboard/orders",
-    icon: ShoppingCartIcon,
-  },
-  {
-    title: "Data Klien",
-    url: "/dashboard/clients",
-    icon: UsersIcon,
-  },
-  {
-    title: "Kelola Konten",
-    url: "/dashboard/content",
-    icon: FileTextIcon,
-  },
-  {
-    title: "Laporan",
-    url: "/dashboard/reports",
-    icon: BarChart3Icon,
-  },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboardIcon },
+  { title: "Manajemen Produk", url: "/dashboard/products", icon: PackageIcon },
+  { title: "Manajemen Pesanan", url: "/dashboard/orders", icon: ShoppingCartIcon },
+  { title: "Data Klien", url: "/dashboard/clients", icon: UsersIcon },
+  { title: "Kelola Konten", url: "/dashboard/content", icon: FileTextIcon },
+  { title: "Laporan", url: "/dashboard/reports", icon: BarChart3Icon },
 ]
 
 export function AppSidebar() {
   const pathname = usePathname()
 
   return (
-    <Sidebar collapsible="icon">
+    // PERBAIKAN PENTING DI SINI:
+    // 1. !relative: Paksa masuk flow dokumen (jangan floating)
+    // 2. h-screen: Tinggi penuh
+    // 3. !border-r: Batas kanan
+    // 4. class w-... dihandle otomatis oleh komponen Sidebar, tapi kita tambah style width manual jika perlu
+    <Sidebar 
+      collapsible="icon" 
+      className="h-full border-r bg-sidebar z-10"
+    >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="flex items-center justify-between w-full">
-              <SidebarMenuButton
-                asChild
-                className="data-[slot=sidebar-menu-button]:!p-1.5 flex-1"
-              >
-                <Link href="/dashboard">
-                  <span className="text-base font-semibold">Le Croissant</span>
+            <div className="flex items-center justify-between w-full px-2 py-2">
+              <SidebarMenuButton asChild size="lg" className="flex-1">
+                <Link href="/dashboard" className="flex items-center gap-2">
+                   {/* Logo / Brand Name */}
+                  <span className="text-base font-bold truncate">Le Croissant</span>
                 </Link>
               </SidebarMenuButton>
-              <SidebarTrigger className="group-data-[collapsible=icon]:hidden h-7 w-7 mr-2" />
             </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
         <NavMain items={navItems.map(item => ({
           ...item,
           isActive: pathname === item.url || pathname?.startsWith(item.url + '/'),
         }))} />
       </SidebarContent>
+
       <SidebarFooter>
         <NavUser user={{
           name: "Admin",

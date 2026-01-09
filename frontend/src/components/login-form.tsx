@@ -71,8 +71,13 @@ export function LoginForm({
         window.dispatchEvent(new Event("authChanged"))
 
         // Redirect Berdasarkan Role
-        if (user?.role === 'admin') {
-          router.push("/dashboard") // Masuk ke admin dashboard
+        const userRole = user?.role
+        const hasAdminRole = user?.roles?.some((r: any) => 
+          r.name === 'Admin' || r.name === 'Super Admin'
+        )
+        
+        if (userRole === 'super_admin' || userRole === 'admin' || hasAdminRole) {
+          router.push("/dashboard") // Masuk ke dashboard admin/super admin
         } else {
           router.push("/") // Masuk ke homepage customer
         }

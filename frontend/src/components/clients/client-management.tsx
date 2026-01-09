@@ -47,8 +47,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+// --- TAMBAHAN IMPORT SELECT ---
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { toast } from "sonner"
 
+// --- UPDATE SCHEMA ---
 const clientFormSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
   email: z.string().email("Email tidak valid"),
@@ -57,6 +66,8 @@ const clientFormSchema = z.object({
   business_sector: z.string().optional(),
   citizenship: z.string().optional(),
   address: z.string().optional(),
+  // Field status WAJIB ada agar lolos validasi dan dikirim ke backend
+  status: z.string().min(1, "Status wajib dipilih"), 
 })
 
 interface ClientManagementProps {
@@ -79,6 +90,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
       business_sector: "",
       citizenship: "",
       address: "",
+      status: "Pending", // Default value untuk klien baru
     },
   })
 
@@ -92,6 +104,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
         business_sector: editingClient.business_sector || "",
         citizenship: editingClient.citizenship || "",
         address: editingClient.address || "",
+        status: editingClient.status || "Pending",
       })
     } else {
       form.reset({
@@ -102,6 +115,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
         business_sector: "",
         citizenship: "",
         address: "",
+        status: "Pending",
       })
     }
   }, [editingClient, form])
@@ -301,7 +315,8 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                           <FormItem>
                             <FormLabel>Sektor Bisnis</FormLabel>
                             <FormControl>
-                              <Input placeholder="Hotel, Restoran, dll" {...field} />
+                                {/* Bisa diganti Select jika mau fix option */}
+                                <Input placeholder="Hotel, Restoran, dll" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -314,7 +329,8 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                           <FormItem>
                             <FormLabel>Kewarganegaraan</FormLabel>
                             <FormControl>
-                              <Input placeholder="WNI / WNA" {...field} />
+                                {/* Bisa diganti Select jika mau fix option (WNI/WNA) */}
+                                <Input placeholder="WNI / WNA" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -334,6 +350,32 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                         </FormItem>
                       )}
                     />
+
+                    {/* --- INPUT STATUS (PENTING) --- */}
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Pending">Pending</SelectItem>
+                              <SelectItem value="Aktif">Aktif</SelectItem>
+                              <SelectItem value="Non Aktif">Non Aktif</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {/* ------------------------------- */}
+
                     <DialogFooter>
                       <Button
                         type="button"
@@ -356,6 +398,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
           </div>
         </CardHeader>
         <CardContent>
+          {/* ... (Tabel tetap sama) ... */}
           <div className="w-full overflow-x-auto">
             <Table>
               <TableHeader>
@@ -428,4 +471,3 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
     </div>
   )
 }
-

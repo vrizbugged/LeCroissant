@@ -65,10 +65,10 @@ export function RecentOrdersTable({ orders }: RecentOrdersTableProps) {
                     #{order.id}
                   </TableCell>
                   <TableCell>
-                    {order.user?.name || 'N/A'}
-                    {order.user?.company_name && (
+                    {order.client?.name || order.user?.name || 'N/A'}
+                    {(order.client?.company_name || order.user?.company_name) && (
                       <div className="text-sm text-muted-foreground">
-                        {order.user.company_name}
+                        {order.client?.company_name || order.user?.company_name}
                       </div>
                     )}
                   </TableCell>

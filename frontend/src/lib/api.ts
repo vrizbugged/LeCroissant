@@ -25,7 +25,12 @@ import type {
   ClientMarketAnalysisParams,
   AuthResponse,
   AuthLoginData,
-  AuthRegisterData
+  AuthRegisterData,
+  ActivityLogResource,
+  ActivityLogListParams,
+  RoleResource,
+  PermissionResource,
+  RoleFormData
 } from "@/types/api"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
@@ -821,6 +826,211 @@ export const clientsApi = {
       return response.data
     } catch (error) {
       console.error('Error fetching market analysis:', error)
+      return null
+    }
+  },
+}
+
+// Activity Logs API
+export const activityLogsApi = {
+  /**
+   * Get paginated activity logs (requires permission: melihat activity log)
+   */
+  getLogs: async (params?: ActivityLogListParams): Promise<PaginatedApiResponse<ActivityLogResource> | null> => {
+    try {
+      const queryParams = new URLSearchParams()
+      if (params?.per_page) queryParams.append('per_page', params.per_page.toString())
+      if (params?.page) queryParams.append('page', params.page.toString())
+      if (params?.causer_id) queryParams.append('causer_id', params.causer_id.toString())
+      if (params?.subject_type) queryParams.append('subject_type', params.subject_type)
+      if (params?.subject_id) queryParams.append('subject_id', params.subject_id.toString())
+      if (params?.event) queryParams.append('event', params.event)
+      if (params?.start_date) queryParams.append('start_date', params.start_date)
+      if (params?.end_date) queryParams.append('end_date', params.end_date)
+      if (params?.search) queryParams.append('search', params.search)
+
+      const queryString = queryParams.toString()
+      const endpoint = `/activity-logs${queryString ? `?${queryString}` : ''}`
+      
+      const response = await apiRequest<{
+        success: boolean
+        data: ActivityLogResource[]
+        meta: {
+          current_page: number
+          per_page: number
+          total: number
+          last_page: number
+        }
+      }>(endpoint)
+      
+      if (!response) return null
+      
+      return {
+        data: response.data,
+        meta: response.meta,
+      }
+    } catch (error) {
+      console.error('Error fetching activity logs:', error)
+      return null
+    }
+  },
+
+  /**
+   * Export activity logs (requires permission: mengekspor activity log)
+   */
+  export: async (params?: ActivityLogListParams): Promise<ActivityLogResource[] | null> => {
+    try {
+      const queryParams = new URLSearchParams()
+      if (params?.causer_id) queryParams.append('causer_id', params.causer_id.toString())
+      if (params?.subject_type) queryParams.append('subject_type', params.subject_type)
+      if (params?.subject_id) queryParams.append('subject_id', params.subject_id.toString())
+      if (params?.event) queryParams.append('event', params.event)
+      if (params?.start_date) queryParams.append('start_date', params.start_date)
+      if (params?.end_date) queryParams.append('end_date', params.end_date)
+      if (params?.search) queryParams.append('search', params.search)
+
+      const queryString = queryParams.toString()
+      const endpoint = `/activity-logs/export${queryString ? `?${queryString}` : ''}`
+      
+      const response = await apiRequest<ApiResponse<ActivityLogResource[]>>(endpoint)
+      if (!response) return null
+      return response.data
+    } catch (error) {
+      console.error('Error exporting activity logs:', error)
+      return null
+    }
+  },
+}
+
+// Roles API
+export const rolesApi = {
+  /**
+   * Get all roles (requires permission: mengelola roles)
+   */
+  getAll: async (): Promise<RoleResource[] | null> => {
+    try {
+      const response = await apiRequest<ApiResponse<RoleResource[]>>('/roles')
+      if (!response) return null
+      return response.data
+    } catch (error) {
+      console.error('Error fetching roles:', error)
+      return null
+    }
+  },
+
+  /**
+   * Get role by ID (requires permission: mengelola roles)
+   */
+  getById: async (id: number): Promise<RoleResource | null> => {
+    try {
+      const response = await apiRequest<ApiResponse<RoleResource>>(`/roles/${id}`)
+      if (!response) return null
+      return response.data
+    } catch (error) {
+      console.error('Error fetching role:', error)
+      return null
+    }
+  },
+
+  /**
+   * Create new role (requires permission: mengelola roles)
+   */
+  create: async (data: RoleFormData): Promise<RoleResource | null> => {
+    try {
+      const response = await apiRequest<ApiResponse<RoleResource>>('/roles', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+      if (!response) return null
+      return response.data
+    } catch (error) {
+      console.error('Error creating role:', error)
+      return null
+    }
+  },
+
+  /**
+   * Update role (requires permission: mengelola roles)
+   */
+  update: async (id: number, data: Partial<RoleFormData>): Promise<RoleResource | null> => {
+    try {
+      const response = await apiRequest<ApiResponse<RoleResource>>(`/roles/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      })
+      if (!response) return null
+      return response.data
+    } catch (error) {
+      console.error('Error updating role:', error)
+      return null
+    }
+  },
+
+  /**
+   * Delete role (requires permission: mengelola roles)
+   */
+  delete: async (id: number): Promise<boolean> => {
+    try {
+      const response = await apiRequest<ApiResponse<void>>(`/roles/${id}`, {
+        method: 'DELETE',
+      })
+      return response !== null
+    } catch (error) {
+      console.error('Error deleting role:', error)
+      return false
+    }
+  },
+
+  /**
+   * Add permission to role (requires permission: mengelola roles)
+   */
+  addPermission: async (id: number, permissionId: number): Promise<RoleResource | null> => {
+    try {
+      const response = await apiRequest<ApiResponse<RoleResource>>(`/roles/${id}/permissions`, {
+        method: 'POST',
+        body: JSON.stringify({ permission_id: permissionId }),
+      })
+      if (!response) return null
+      return response.data
+    } catch (error) {
+      console.error('Error adding permission to role:', error)
+      return null
+    }
+  },
+}
+
+// Permissions API
+export const permissionsApi = {
+  /**
+   * Get all permissions (requires permission: mengelola roles)
+   */
+  getAll: async (params?: { search?: string }): Promise<PermissionResource[] | null> => {
+    try {
+      const queryParams = new URLSearchParams()
+      if (params?.search) queryParams.append('search', params.search)
+
+      const queryString = queryParams.toString()
+      const endpoint = `/permissions${queryString ? `?${queryString}` : ''}`
+      
+      const response = await apiRequest<ApiResponse<PermissionResource[]>>(endpoint)
+      if (!response) return null
+      return response.data
+    } catch (error) {
+      console.error('Error fetching permissions:', error)
+      return null
+    }
+  },
+
+  /**
+   * Get permission by ID (requires permission: mengelola roles)
+   */
+  getById: async (id: number): Promise<PermissionResource | null> => {
+    try {
+      const response = await apiRequest<ApiResponse<PermissionResource>>(`/permissions/${id}`)
+      if (!response) return null
+      return response.data
+    } catch (error) {
+      console.error('Error fetching permission:', error)
       return null
     }
   },

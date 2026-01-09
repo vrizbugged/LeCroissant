@@ -11,6 +11,8 @@ import {
   UsersIcon,
   FileTextIcon,
   BarChart3Icon,
+  ActivityIcon,
+  ShieldCheckIcon,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -34,7 +36,8 @@ const NavUser = dynamic(
   }
 )
 
-const navItems = [
+// Base navigation items for all admins
+const baseNavItems = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -55,23 +58,61 @@ const navItems = [
     url: "/dashboard/clients",
     icon: UsersIcon,
   },
+
+]
+
+// Super Admin only navigation items
+const superAdminNavItems = [
   {
-    title: "Kelola Konten",
-    url: "/dashboard/content",
-    icon: FileTextIcon,
+    title: "Activity Log",
+    url: "/dashboard/activity-logs",
+    icon: ActivityIcon,
   },
   {
-    title: "Laporan",
-    url: "/dashboard/reports",
-    icon: BarChart3Icon,
+    title: "Role & Permission",
+    url: "/dashboard/roles",
+    icon: ShieldCheckIcon,
   },
 ]
 
 export function AdminSidebar() {
   const pathname = usePathname()
+  const [user, setUser] = React.useState<any>(null)
+  const [isSuperAdmin, setIsSuperAdmin] = React.useState(false)
+
+  // Get user from localStorage
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        try {
+          const userData = JSON.parse(userStr)
+          setUser(userData)
+          
+          // Check if user is super admin
+          const isSuper = userData.role === 'super_admin' || 
+                         (userData.roles && userData.roles.some((r: any) => r.name === 'Super Admin'))
+          setIsSuperAdmin(isSuper)
+        } catch (error) {
+          console.error('Error parsing user data:', error)
+        }
+      }
+    }
+  }, [])
+
+  // Combine nav items based on role
+  const navItems = React.useMemo(() => {
+    if (isSuperAdmin) {
+      return [...baseNavItems, ...superAdminNavItems]
+    }
+    return baseNavItems
+  }, [isSuperAdmin])
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar 
+      collapsible="icon" 
+      className="!relative h-screen !border-r bg-sidebar z-10"
+    >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -97,8 +138,8 @@ export function AdminSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={{
-          name: "Admin",
-          email: "admin@lecroissant.com",
+          name: user?.name || "Admin",
+          email: user?.email || "admin@lecroissant.com",
           avatar: "/avatars/admin.jpg",
         }} />
       </SidebarFooter>

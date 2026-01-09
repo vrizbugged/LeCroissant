@@ -32,7 +32,8 @@ export interface ProductListParams {
 // Order Resource (matching Laravel Order model)
 export interface OrderResource {
   id: number
-  user_id: number
+  client_id?: number
+  user_id?: number // Deprecated, use client instead
   delivery_date: string
   status: 'menunggu_konfirmasi' | 'diproses' | 'selesai' | 'dibatalkan'
   total_price: number
@@ -40,7 +41,8 @@ export interface OrderResource {
   created_at: string
   updated_at: string
   // Relationships
-  user?: UserResource
+  user?: UserResource // Deprecated, use client.user instead
+  client?: ClientResource
   products?: OrderProductResource[]
   invoice?: InvoiceResource | null
 }
@@ -66,10 +68,11 @@ export interface UserResource {
   email: string
   phone_number?: string | null
   address?: string | null
-  role?: 'admin' | 'klien_b2b' | null
+  role?: 'admin' | 'klien_b2b' | 'super_admin' | null
   status?: 'Aktif' | 'Non Aktif'
   created_at?: string
   updated_at?: string
+  roles?: Array<{ id: number; name: string }> // Spatie Permission roles
 }
 
 // User Form Data
@@ -294,6 +297,64 @@ export interface OrderItemResource {
   quantity: number
   price: number
   subtotal: number
+}
+
+// Activity Log Resource
+export interface ActivityLogResource {
+  id: number
+  description: string
+  event: string
+  causer?: {
+    id: number
+    name: string
+    email: string
+  } | null
+  subject?: {
+    type: string
+    id: number
+    name: string
+  } | null
+  properties?: Record<string, any>
+  created_at: string
+}
+
+// Activity Log Query Parameters
+export interface ActivityLogListParams {
+  per_page?: number
+  page?: number
+  causer_id?: number
+  subject_type?: string
+  subject_id?: number
+  event?: string
+  start_date?: string
+  end_date?: string
+  search?: string
+}
+
+// Role Resource
+export interface RoleResource {
+  id: number
+  name: string
+  permissions: string[]
+  status?: string
+  created_at?: string
+  updated_at?: string
+}
+
+// Permission Resource
+export interface PermissionResource {
+  id: number
+  name: string
+  guard_name: string
+  created_at?: string
+  updated_at?: string
+}
+
+// Role Form Data
+export interface RoleFormData {
+  name: string
+  permissions?: string[]
+  status?: string
 }
 
 
