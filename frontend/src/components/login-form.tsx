@@ -53,45 +53,52 @@ export function LoginForm({
         password: data.password,
       })
 
-      // Cek apakah result memiliki data yang valid
-      if (result) {
-        const responseData = result as any;
+      // authApi.login() sudah mengembalikan result.data yang berisi {user, token, token_type}
+      if (result && result.token) {
+        const token = result.token
+        const user = result.user
 
-        const token = responseData.token || responseData.data?.token;
-        const user = responseData.user || responseData.data?.user;
-
-        if (token) {
-          // PERBAIKAN 2: Simpan ke LocalStorage (WAJIB AGAR NAVBAR BERUBAH)
-          localStorage.setItem("token", token)
-          if (user) {
-            localStorage.setItem("user", JSON.stringify(user))
-          }
-
-          toast.success("Login berhasil!")
-
-          // Dispatch event untuk cart context agar cart di-reload
-          window.dispatchEvent(new Event("authChanged"))
-
-          // PERBAIKAN 3: Redirect Berdasarkan Role
-          if (user?.role === 'admin') {
-            router.push("/dashboard") // Masuk ke admin dashboard
-          } else {
-            router.push("/") // Masuk ke homepage customer
-          }
-          
-          // PERBAIKAN 4: Refresh agar komponen lain (seperti Navbar) tahu ada perubahan data
-          router.refresh()
-        } else {
-          // Jika login sukses tapi token tidak ditemukan di response
-          console.error("Token missing in response:", result)
-          toast.error("Terjadi kesalahan sistem: Token tidak ditemukan")
+        // Simpan ke LocalStorage (WAJIB AGAR NAVBAR BERUBAH)
+        localStorage.setItem("token", token)
+        localStorage.setItem("auth_token", token) // Simpan juga di auth_token untuk konsistensi
+        if (user) {
+          localStorage.setItem("user", JSON.stringify(user))
         }
+
+        toast.success("Login berhasil!")
+
+        // Dispatch event untuk cart context agar cart di-reload
+        window.dispatchEvent(new Event("authChanged"))
+
+        // Redirect Berdasarkan Role
+        if (user?.role === 'admin') {
+          router.push("/dashboard") // Masuk ke admin dashboard
+        } else {
+          router.push("/") // Masuk ke homepage customer
+        }
+        
+        // Refresh agar komponen lain (seperti Navbar) tahu ada perubahan data
+        router.refresh()
       } else {
-        toast.error("Email atau password salah")
+        // Jika login sukses tapi token tidak ditemukan di response
+        console.error("Token missing in response:", result)
+        toast.error("Terjadi kesalahan sistem: Token tidak ditemukan")
       }
     } catch (error) {
       console.error("Error logging in:", error)
-      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan saat login"
+      let errorMessage = "Terjadi kesalahan saat login"
+      
+      if (error instanceof Error) {
+        // Cek apakah ini network error
+        if (error.message.includes('Failed to fetch') || error.message.includes('Network')) {
+          errorMessage = "Tidak dapat terhubung ke server. Pastikan backend berjalan di http://127.0.0.1:8000"
+        } else if (error.message.includes('Invalid credentials')) {
+          errorMessage = "Email atau password salah"
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
       toast.error(errorMessage)
     } finally {
       setLoading(false)

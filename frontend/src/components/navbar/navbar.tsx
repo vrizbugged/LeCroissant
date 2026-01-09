@@ -6,7 +6,14 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { LogOut, LogIn, ShoppingCartIcon, ShoppingBasket, House } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { LogOut, LogIn, ShoppingCartIcon, ShoppingBasket, House, User, Receipt } from "lucide-react"
 
 export function Navbar() {
   const router = useRouter()
@@ -163,40 +170,49 @@ export function Navbar() {
                   )}
                 </Button>
               </Link>
-              <span className="text-black/70 mx-1">·</span>
-              <Link href="/services">
-                <Button variant="ghost" className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20">
-                  Services
-                </Button>
-              </Link>
             </div>
           </div>
 
-          {/* --- BAGIAN KANAN: Tombol Login/Logout --- */}
+          {/* --- BAGIAN KANAN: User Dropdown --- */}
           <div className="flex items-center gap-2 pr-4 md:pr-6">
-            {isLoggedIn ? (
-              // JIKA SUDAH LOGIN: Tampilkan tombol LOGOUT (Style Outline/Putih)
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-sm bg-white border-white/30 text-orange-600 hover:bg-white/90 hover:text-orange-700 shadow-sm"
-                onClick={handleLogout}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </Button>
-            ) : (
-              // JIKA BELUM LOGIN: Tampilkan tombol LOGIN (Style Orange Solid)
-              <Link href="/login">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
+                  variant="outline"
                   size="sm"
-                  className="text-sm bg-orange-600 hover:bg-orange-700 text-white border-none shadow-md"
+                  className="text-sm bg-white border-white/30 text-orange-600 hover:bg-white/90 hover:text-orange-700 shadow-sm"
                 >
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Login
+                  <User className="h-4 w-4" />
                 </Button>
-              </Link>
-            )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {isLoggedIn ? (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/my-transactions" className="flex items-center cursor-pointer">
+                        <Receipt className="mr-2 h-4 w-4" />
+                        My Transactions
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <DropdownMenuItem asChild>
+                    <Link href="/login" className="flex items-center cursor-pointer">
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Login
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           
         </div>

@@ -136,25 +136,43 @@ export const authApi = {
         Accept: 'application/json',
       }
 
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(data),
-        cache: 'no-store',
-      })
+      let response: Response
+      try {
+        response = await fetch(`${API_BASE_URL}/login`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(data),
+          cache: 'no-store',
+        })
+      } catch (fetchError) {
+        // Network error (backend tidak berjalan, CORS, dll)
+        if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
+          throw new Error('Failed to fetch: Tidak dapat terhubung ke server. Pastikan backend berjalan di http://127.0.0.1:8000')
+        }
+        throw fetchError
+      }
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({
-          message: 'Invalid credentials',
-        }))
-        // Throw error dengan message untuk ditangani di component
-        throw new Error(error.message || 'Invalid credentials')
+        let errorMessage = 'Invalid credentials'
+        try {
+          const error = await response.json()
+          errorMessage = error.message || errorMessage
+        } catch {
+          // Jika response bukan JSON, gunakan status text
+          errorMessage = response.statusText || `HTTP ${response.status}`
+        }
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()
       
+      // Validasi response structure
+      if (!result.data || !result.data.token) {
+        throw new Error('Invalid response format from server')
+      }
+      
       // Store token in localStorage
-      if (typeof window !== 'undefined' && result.data?.token) {
+      if (typeof window !== 'undefined' && result.data.token) {
         localStorage.setItem('auth_token', result.data.token)
       }
       
