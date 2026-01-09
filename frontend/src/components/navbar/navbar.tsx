@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, LogIn, ShoppingCartIcon, ShoppingBasket, House, User, Receipt } from "lucide-react"
+import { LogOut, LogIn, ShoppingCartIcon, ShoppingBasket, House, User, Receipt, UserPlus } from "lucide-react"
 
 export function Navbar() {
   const router = useRouter()
@@ -204,12 +204,21 @@ export function Navbar() {
                     </DropdownMenuItem>
                   </>
                 ) : (
-                  <DropdownMenuItem asChild>
-                    <Link href="/login" className="flex items-center cursor-pointer">
-                      <LogIn className="mr-2 h-4 w-4" />
-                      Login
-                    </Link>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/login" className="flex items-center cursor-pointer">
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Login
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/signup" className="flex items-center cursor-pointer">
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Sign Up
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>

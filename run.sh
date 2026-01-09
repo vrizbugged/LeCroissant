@@ -99,7 +99,45 @@ check_prerequisites() {
 setup_backend() {
     print_section "Setting up Backend (Laravel)"
     
+    # Check if backend directory exists, create if not
+    if [ ! -d "backend" ]; then
+        print_info "Backend directory not found, creating..."
+        mkdir -p backend
+    fi
+    
     cd backend || exit 1
+    
+    # Check if Laravel project is already initialized
+    if [ ! -f "composer.json" ]; then
+        print_info "Laravel project not found. Initializing new Laravel project..."
+        cd ..
+        
+        # Check if backend directory is empty or has hidden files only
+        if [ -z "$(ls -A backend 2>/dev/null)" ] || [ "$(ls -A backend 2>/dev/null | grep -v '^\.')" = "" ]; then
+            print_info "Installing Laravel project..."
+            # Create Laravel project in temp directory first
+            TEMP_DIR=$(mktemp -d)
+            composer create-project laravel/laravel "$TEMP_DIR" --prefer-dist --no-interaction
+            if [ $? -ne 0 ]; then
+                print_error "Failed to create Laravel project"
+                rm -rf "$TEMP_DIR"
+                exit 1
+            fi
+            # Move all files from temp to backend directory (including hidden files)
+            print_info "Moving Laravel files to backend directory..."
+            shopt -s dotglob
+            mv "$TEMP_DIR"/* backend/ 2>/dev/null || true
+            shopt -u dotglob
+            rm -rf "$TEMP_DIR"
+            print_success "Laravel project created"
+        else
+            print_error "Backend directory exists but is not empty and doesn't contain a Laravel project"
+            print_error "Please remove the backend directory or initialize Laravel manually"
+            exit 1
+        fi
+        
+        cd backend || exit 1
+    fi
     
     # Install Composer dependencies
     print_info "Installing Composer dependencies..."
