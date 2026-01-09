@@ -51,8 +51,7 @@ export default function CartPage() {
       toast.error("Keranjang masih kosong")
       return
     }
-    // TODO: Implementasi checkout
-    toast.info("Fitur checkout akan segera tersedia")
+    router.push("/checkout")
   }
 
   const handleLoginClick = () => {
@@ -265,7 +264,7 @@ export default function CartPage() {
                     <div className="space-y-2 pt-4">
                       <Button
                         onClick={handleCheckout}
-                        className="w-full"
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white"
                         size="lg"
                       >
                         Checkout
