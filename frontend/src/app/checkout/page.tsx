@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { ArrowLeftIcon, Loader2Icon, CalendarIcon, MapPinIcon, PhoneIcon, MailIcon } from "lucide-react"
+import { ArrowLeftIcon, Loader2, MapPinIcon, PhoneIcon, UploadIcon, XIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,14 +23,31 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Navbar } from "@/components/navbar/navbar"
 import { useCart } from "@/contexts/cart-context"
-import { ordersApi } from "@/lib/api"
+import { ordersApi, authApi } from "@/lib/api"
+import type { UserResource } from "@/types/api"
 import { toast } from "sonner"
 
 const checkoutFormSchema = z.object({
-  delivery_date: z.string().min(1, "Tanggal pengiriman wajib diisi"),
   phone_number: z.string().min(1, "Nomor telepon wajib diisi"),
   address: z.string().min(1, "Alamat wajib diisi"),
   special_notes: z.string().optional(),
+  payment_proof: z.instanceof(File).optional().or(z.literal("")),
+}).refine((data) => {
+  // Payment proof is optional but if provided must be valid file
+  if (data.payment_proof && data.payment_proof instanceof File) {
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+    if (data.payment_proof.size > maxSize) {
+      return false
+    }
+    if (!allowedTypes.includes(data.payment_proof.type)) {
+      return false
+    }
+  }
+  return true
+}, {
+  message: "File bukti pembayaran harus berupa gambar (JPG, PNG) atau PDF, maksimal 5MB",
+  path: ["payment_proof"],
 })
 
 type CheckoutFormValues = z.infer<typeof checkoutFormSchema>
@@ -39,6 +56,49 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { items, getTotalPrice, isAuthenticated, clearCart } = useCart()
   const [loading, setLoading] = React.useState(false)
+  const [user, setUser] = React.useState<UserResource | null>(null)
+  const [loadingUser, setLoadingUser] = React.useState(true)
+  const [paymentProofPreview, setPaymentProofPreview] = React.useState<string | null>(null)
+
+  // Initialize form first
+  const form = useForm<CheckoutFormValues>({
+    resolver: zodResolver(checkoutFormSchema),
+    defaultValues: {
+      phone_number: "",
+      address: "",
+      special_notes: "",
+      payment_proof: undefined,
+    },
+  })
+
+  // Load user data
+  React.useEffect(() => {
+    async function loadUser() {
+      if (!isAuthenticated) {
+        setLoadingUser(false)
+        return
+      }
+      setLoadingUser(true)
+      try {
+        const userData = await authApi.me()
+        if (userData) {
+          setUser(userData)
+          // Pre-fill form dengan data Client (prioritas) atau User
+          // Jika user memiliki Client, gunakan data Client, jika tidak gunakan data User
+          const phoneNumber = userData.client?.phone_number || userData.phone_number || ''
+          const address = userData.client?.address || userData.address || ''
+          
+          form.setValue('phone_number', phoneNumber)
+          form.setValue('address', address)
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error)
+      } finally {
+        setLoadingUser(false)
+      }
+    }
+    loadUser()
+  }, [isAuthenticated, form])
 
   // Redirect jika belum login atau cart kosong
   React.useEffect(() => {
@@ -52,16 +112,6 @@ export default function CheckoutPage() {
       return
     }
   }, [isAuthenticated, items.length, router])
-
-  const form = useForm<CheckoutFormValues>({
-    resolver: zodResolver(checkoutFormSchema),
-    defaultValues: {
-      delivery_date: "",
-      phone_number: "",
-      address: "",
-      special_notes: "",
-    },
-  })
 
   // Format harga ke Rupiah
   const formatPrice = (price: number): string => {
@@ -83,8 +133,8 @@ export default function CheckoutPage() {
     try {
       // Prepare order data
       const orderData = {
-        delivery_date: data.delivery_date,
         special_notes: data.special_notes || undefined,
+        payment_proof: data.payment_proof instanceof File ? data.payment_proof : undefined,
         products: items.map((item) => ({
           id: item.product.id,
           quantity: item.quantity,
@@ -102,17 +152,63 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       console.error("Error creating order:", error)
-      toast.error("Terjadi kesalahan saat membuat pesanan")
+      toast.error(error instanceof Error ? error.message : "Terjadi kesalahan saat membuat pesanan")
     } finally {
       setLoading(false)
     }
   }
 
-  // Set minimum date to today
-  const today = new Date().toISOString().split("T")[0]
+  const handlePaymentProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Ukuran file maksimal 5MB")
+        e.target.value = ''
+        return
+      }
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("File harus berupa gambar (JPG, PNG) atau PDF")
+        e.target.value = ''
+        return
+      }
+      form.setValue('payment_proof', file)
+      // Create preview for images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setPaymentProofPreview(reader.result as string)
+        }
+        reader.readAsDataURL(file)
+      } else {
+        setPaymentProofPreview(null)
+      }
+    }
+  }
+
+  const removePaymentProof = () => {
+    form.setValue('payment_proof', undefined)
+    setPaymentProofPreview(null)
+  }
 
   if (!isAuthenticated || items.length === 0) {
     return null // Will redirect
+  }
+
+  // Show loading state while fetching user data
+  if (loadingUser) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 pt-24 md:pt-28">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const totalPrice = getTotalPrice()
@@ -136,7 +232,7 @@ export default function CheckoutPage() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Checkout</h1>
               <p className="text-muted-foreground mt-1">
-                Lengkapi informasi pengiriman untuk menyelesaikan pesanan
+                Lengkapi informasi kontak dan upload bukti pembayaran untuk menyelesaikan pesanan
               </p>
             </div>
           </div>
@@ -146,37 +242,15 @@ export default function CheckoutPage() {
             <div className="lg:col-span-2 space-y-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Delivery Information */}
+                  {/* Contact Information */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <CalendarIcon className="h-5 w-5 text-orange-600" />
-                        Informasi Pengiriman
+                        <PhoneIcon className="h-5 w-5 text-orange-600" />
+                        Informasi Kontak
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="delivery_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tanggal Pengiriman</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="date"
-                                min={today}
-                                {...field}
-                                className="w-full"
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Pilih tanggal pengiriman yang diinginkan
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
                       <FormField
                         control={form.control}
                         name="phone_number"
@@ -191,6 +265,7 @@ export default function CheckoutPage() {
                                 type="tel"
                                 placeholder="081234567890"
                                 {...field}
+                                disabled={loadingUser}
                               />
                             </FormControl>
                             <FormDescription>
@@ -208,17 +283,18 @@ export default function CheckoutPage() {
                           <FormItem>
                             <FormLabel className="flex items-center gap-2">
                               <MapPinIcon className="h-4 w-4 text-orange-600" />
-                              Alamat Pengiriman
+                              Alamat
                             </FormLabel>
                             <FormControl>
                               <Textarea
-                                placeholder="Masukkan alamat lengkap pengiriman"
+                                placeholder="Masukkan alamat lengkap"
                                 rows={4}
                                 {...field}
+                                disabled={loadingUser}
                               />
                             </FormControl>
                             <FormDescription>
-                              Alamat lengkap untuk pengiriman pesanan
+                              Alamat lengkap Anda (dapat diedit jika perlu)
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -248,6 +324,97 @@ export default function CheckoutPage() {
                     </CardContent>
                   </Card>
 
+                  {/* Upload Bukti Pembayaran */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <UploadIcon className="h-5 w-5 text-orange-600" />
+                        Upload Bukti Pembayaran
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="payment_proof"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>File Bukti Pembayaran</FormLabel>
+                            <FormControl>
+                              <div className="space-y-3">
+                                {paymentProofPreview ? (
+                                  <div className="relative">
+                                    <div className="border rounded-lg p-4 bg-muted/50">
+                                      <div className="flex items-center gap-3">
+                                        {form.watch('payment_proof') instanceof File && 
+                                         form.watch('payment_proof').type.startsWith('image/') ? (
+                                          <img
+                                            src={paymentProofPreview}
+                                            alt="Preview bukti pembayaran"
+                                            className="w-20 h-20 object-cover rounded"
+                                          />
+                                        ) : (
+                                          <div className="w-20 h-20 flex items-center justify-center bg-muted rounded">
+                                            <span className="text-xs text-muted-foreground">PDF</span>
+                                          </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-medium truncate">
+                                            {form.watch('payment_proof') instanceof File 
+                                              ? form.watch('payment_proof').name 
+                                              : 'File terpilih'}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {form.watch('payment_proof') instanceof File 
+                                              ? `${(form.watch('payment_proof').size / 1024).toFixed(2)} KB`
+                                              : ''}
+                                          </p>
+                                        </div>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={removePaymentProof}
+                                          className="text-destructive hover:text-destructive"
+                                        >
+                                          <XIcon className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                                    <UploadIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                    <p className="text-sm text-muted-foreground mb-2">
+                                      Upload bukti pembayaran (JPG, PNG, atau PDF)
+                                    </p>
+                                    <Input
+                                      type="file"
+                                      accept="image/jpeg,image/jpg,image/png,application/pdf"
+                                      onChange={handlePaymentProofChange}
+                                      className="hidden"
+                                      id="payment_proof_input"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      onClick={() => document.getElementById('payment_proof_input')?.click()}
+                                    >
+                                      Pilih File
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </FormControl>
+                            <FormDescription>
+                              Upload bukti pembayaran Anda (maksimal 5MB). Format: JPG, PNG, atau PDF
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+
                   {/* Action Buttons */}
                   <div className="flex gap-4">
                     <Button
@@ -265,7 +432,7 @@ export default function CheckoutPage() {
                     >
                       {loading ? (
                         <>
-                          <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Memproses...
                         </>
                       ) : (

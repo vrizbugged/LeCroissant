@@ -73,6 +73,17 @@ export interface UserResource {
   created_at?: string
   updated_at?: string
   roles?: Array<{ id: number; name: string }> // Spatie Permission roles
+  client?: {
+    id: number
+    name: string
+    email: string
+    phone_number?: string | null
+    address?: string | null
+    company_name?: string | null
+    business_sector?: string | null
+    citizenship?: string | null
+    status?: string
+  } | null
 }
 
 // User Form Data
@@ -123,8 +134,8 @@ export interface InvoiceResource {
 
 // Order Form Data (for creating/updating orders)
 export interface OrderFormData {
-  delivery_date: string
   special_notes?: string
+  payment_proof?: File
   products: Array<{
     id: number
     quantity: number

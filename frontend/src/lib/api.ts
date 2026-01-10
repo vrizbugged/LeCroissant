@@ -241,9 +241,10 @@ export const authApi = {
    */
   me: async (): Promise<UserResource | null> => {
     try {
-      const response = await apiRequest<ApiResponse<{ user: UserResource }>>('/user')
+      // /user endpoint returns user directly, not wrapped in ApiResponse
+      const response = await apiRequest<UserResource>('/user')
       if (!response) return null
-      return response.data.user
+      return response
     } catch (error) {
       console.error('Error fetching current user:', error)
       return null
@@ -514,14 +515,70 @@ export const ordersApi = {
    */
   create: async (data: OrderFormData): Promise<OrderResource | null> => {
     try {
-      const response = await apiRequest<ApiResponse<OrderResource>>('/orders', {
-        method: 'POST',
-        body: JSON.stringify(data),
+      // Handle FormData for file upload (payment_proof)
+      const formData = new FormData()
+      
+      // Add products as array using bracket notation for Laravel
+      data.products.forEach((product, index) => {
+        formData.append(`products[${index}][id]`, product.id.toString())
+        formData.append(`products[${index}][quantity]`, product.quantity.toString())
       })
-      if (!response) return null
-      return response.data
+      
+      // Add special_notes if exists
+      if (data.special_notes) {
+        formData.append('special_notes', data.special_notes)
+      }
+      
+      // Add payment_proof file if exists
+      if (data.payment_proof instanceof File) {
+        formData.append('payment_proof', data.payment_proof)
+      }
+
+      const token = typeof window !== 'undefined' ? getAuthToken() : null
+      const headers: HeadersInit = {
+        'Accept': 'application/json',
+        // Don't set Content-Type for FormData - browser will set it automatically with boundary
+      }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const response = await fetch(`${API_BASE_URL}/orders`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      }).catch((error) => {
+        console.error('Network error:', error)
+        throw new Error('Failed to connect to server. Please check your connection.')
+      })
+
+      if (!response) {
+        throw new Error('Failed to connect to server')
+      }
+
+      if (!response.ok) {
+        // Handle 401 Unauthenticated - redirect to login
+        if (response.status === 401) {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('auth_token')
+            window.location.href = '/login'
+          }
+          return null
+        }
+
+        const error = await response.json().catch(() => ({ 
+          message: `Request failed: ${response.statusText}` 
+        }))
+        throw new Error(error.message || `Request failed: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      return result.data || null
     } catch (error) {
       console.error('Error creating order:', error)
+      if (error instanceof Error) {
+        throw error
+      }
       return null
     }
   },
