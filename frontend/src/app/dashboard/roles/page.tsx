@@ -13,8 +13,9 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Search, Trash2, Edit, Shield, UserPlus, Mail, User } from "lucide-react"
+import { Plus, Search, Trash2, Edit, Shield, UserPlus, Mail, User, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 // ScrollArea component - simple implementation
 const ScrollArea = ({ children, className }: { children: React.ReactNode; className?: string }) => (
   <div className={`overflow-y-auto ${className || ''}`}>{children}</div>
@@ -38,20 +39,35 @@ export default function RolesPage() {
   const [userEmail, setUserEmail] = React.useState("")
   const [selectedUser, setSelectedUser] = React.useState<UserResource | null>(null)
   const [selectedRoleForUser, setSelectedRoleForUser] = React.useState<string>("")
+  const [userSuggestions, setUserSuggestions] = React.useState<UserResource[]>([])
+  const [showSuggestions, setShowSuggestions] = React.useState(false)
   const [searchingUser, setSearchingUser] = React.useState(false)
   const [assigningRole, setAssigningRole] = React.useState(false)
+  const [assignedUsers, setAssignedUsers] = React.useState<UserResource[]>([])
+  const [editingUserId, setEditingUserId] = React.useState<number | null>(null)
+  const [editingRole, setEditingRole] = React.useState<string>("")
+  const inputRef = React.useRef<HTMLInputElement>(null)
+  const suggestionsRef = React.useRef<HTMLDivElement>(null)
 
   // Fetch roles and permissions
   React.useEffect(() => {
     async function fetchData() {
       setLoading(true)
       try {
-        const [rolesData, permissionsData] = await Promise.all([
+        const [rolesData, permissionsData, assignedUsersData] = await Promise.all([
           rolesApi.getAll(),
           permissionsApi.getAll(),
+          usersApi.getAll({ per_page: 100 }), // Fetch users dengan role untuk ditampilkan di tabel
         ])
         setRoles(rolesData || [])
         setPermissions(permissionsData || [])
+        // Filter users yang sudah punya role (admin, super_admin, atau roles array)
+        const usersWithRoles = (assignedUsersData?.data || []).filter((user) => 
+          user.role === 'admin' || 
+          user.role === 'super_admin' || 
+          (user.roles && user.roles.length > 0)
+        )
+        setAssignedUsers(usersWithRoles)
       } catch (error) {
         console.error("Error fetching data:", error)
         toast.error("Gagal memuat data")
@@ -60,6 +76,50 @@ export default function RolesPage() {
       }
     }
     fetchData()
+  }, [])
+
+  // Debounce search for user suggestions
+  React.useEffect(() => {
+    if (!userEmail.trim() || userEmail.length < 2) {
+      setUserSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await usersApi.getAll({ 
+          search: userEmail, 
+          per_page: 5 
+        })
+        
+        if (response && response.data) {
+          setUserSuggestions(response.data)
+          setShowSuggestions(true)
+        }
+      } catch (error) {
+        console.error("Error searching users:", error)
+      }
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [userEmail])
+
+  // Close suggestions when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   // Filter roles by search term
@@ -156,36 +216,17 @@ export default function RolesPage() {
     }))
   }
 
-  // Search user by email
-  const handleSearchUser = async () => {
-    if (!userEmail.trim()) {
-      toast.error("Email wajib diisi")
-      return
-    }
-
-    setSearchingUser(true)
-    try {
-      const response = await usersApi.getAll({ search: userEmail, per_page: 1 })
-      if (response && response.data && response.data.length > 0) {
-        const user = response.data[0]
-        setSelectedUser(user)
-        // Set current role if exists
-        if (user.roles && user.roles.length > 0) {
-          setSelectedRoleForUser(user.roles[0].name)
-        } else if (user.role) {
-          setSelectedRoleForUser(user.role)
-        }
-        toast.success("User ditemukan")
-      } else {
-        toast.error("User tidak ditemukan")
-        setSelectedUser(null)
-      }
-    } catch (error) {
-      console.error("Error searching user:", error)
-      toast.error("Gagal mencari user")
-      setSelectedUser(null)
-    } finally {
-      setSearchingUser(false)
+  // Select user from suggestions
+  const handleSelectUser = (user: UserResource) => {
+    setSelectedUser(user)
+    setUserEmail(user.email)
+    setShowSuggestions(false)
+    
+    // Set current role if exists
+    if (user.roles && user.roles.length > 0) {
+      setSelectedRoleForUser(user.roles[0].name)
+    } else if (user.role) {
+      setSelectedRoleForUser(user.role)
     }
   }
 
@@ -209,12 +250,22 @@ export default function RolesPage() {
 
       if (result) {
         toast.success("Role berhasil diberikan ke user")
-        setSelectedUser(result)
-        // Refresh roles list if needed
-        const rolesData = await rolesApi.getAll()
-        if (rolesData) {
-          setRoles(rolesData)
-        }
+        
+        // Update atau add to assigned users list
+        setAssignedUsers((prev) => {
+          const existingIndex = prev.findIndex((u) => u.id === result.id)
+          if (existingIndex >= 0) {
+            return prev.map((u, idx) => idx === existingIndex ? result : u)
+          } else {
+            return [...prev, result]
+          }
+        })
+        
+        // Reset form
+        setSelectedUser(null)
+        setUserEmail("")
+        setSelectedRoleForUser("")
+        setShowSuggestions(false)
       }
     } catch (error) {
       console.error("Error assigning role:", error)
@@ -222,6 +273,50 @@ export default function RolesPage() {
     } finally {
       setAssigningRole(false)
     }
+  }
+
+  // Start editing user role
+  const handleStartEdit = (user: UserResource) => {
+    setEditingUserId(user.id)
+    if (user.roles && user.roles.length > 0) {
+      setEditingRole(user.roles[0].name)
+    } else if (user.role) {
+      setEditingRole(user.role)
+    } else {
+      setEditingRole("")
+    }
+  }
+
+  // Save edited role
+  const handleSaveEdit = async (userId: number) => {
+    if (!editingRole) {
+      toast.error("Role wajib dipilih")
+      return
+    }
+
+    try {
+      const result = await usersApi.update(userId, {
+        role: editingRole,
+      })
+
+      if (result) {
+        toast.success("Role berhasil diperbarui")
+        setAssignedUsers((prev) =>
+          prev.map((u) => (u.id === userId ? result : u))
+        )
+        setEditingUserId(null)
+        setEditingRole("")
+      }
+    } catch (error) {
+      console.error("Error updating user role:", error)
+      toast.error("Gagal memperbarui role")
+    }
+  }
+
+  // Cancel edit
+  const handleCancelEdit = () => {
+    setEditingUserId(null)
+    setEditingRole("")
   }
 
   if (loading) {
@@ -427,30 +522,59 @@ export default function RolesPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="user-email">Email User</Label>
-                <div className="flex gap-2">
+                <div className="relative">
                   <div className="relative flex-1">
-                    <Mail className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground z-10" />
                     <Input
+                      ref={inputRef}
                       id="user-email"
                       type="email"
-                      placeholder="edward@example.com"
+                      placeholder="Ketik email user, contoh: edward@example.com"
                       value={userEmail}
-                      onChange={(e) => setUserEmail(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleSearchUser()
+                      onChange={(e) => {
+                        setUserEmail(e.target.value)
+                        setShowSuggestions(true)
+                      }}
+                      onFocus={() => {
+                        if (userSuggestions.length > 0) {
+                          setShowSuggestions(true)
                         }
                       }}
                       className="pl-8"
                     />
                   </div>
-                  <Button
-                    onClick={handleSearchUser}
-                    disabled={searchingUser || !userEmail.trim()}
-                  >
-                    <Search className="mr-2 h-4 w-4" />
-                    Cari
-                  </Button>
+
+                  {/* Autocomplete Suggestions Dropdown */}
+                  {showSuggestions && userSuggestions.length > 0 && (
+                    <div
+                      ref={suggestionsRef}
+                      className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto"
+                    >
+                      {userSuggestions.map((user) => (
+                        <div
+                          key={user.id}
+                          onClick={() => handleSelectUser(user)}
+                          className={cn(
+                            "px-4 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors",
+                            selectedUser?.id === user.id && "bg-accent"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{user.email}</p>
+                              <p className="text-xs text-muted-foreground">{user.name}</p>
+                            </div>
+                            {user.roles && user.roles.length > 0 && (
+                              <Badge variant="secondary" className="text-xs">
+                                {user.roles[0].name}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -505,13 +629,112 @@ export default function RolesPage() {
                 </div>
               )}
 
-              {!selectedUser && userEmail && !searchingUser && (
+              {!selectedUser && userEmail && userSuggestions.length === 0 && !searchingUser && (
                 <div className="rounded-lg border border-dashed p-8 text-center">
-                  <User className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <Mail className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <p className="text-sm text-muted-foreground">
-                    Ketik email user dan klik "Cari" untuk menemukan user
+                    {userEmail.length >= 2 
+                      ? "User tidak ditemukan. Pastikan email sudah terdaftar."
+                      : "Ketik minimal 2 karakter untuk mencari user"}
                   </p>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Assigned Users Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Users dengan Role</CardTitle>
+              <CardDescription>
+                Daftar user yang sudah diberikan role
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {assignedUsers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Belum ada user yang diberikan role
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assignedUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.email}</TableCell>
+                        <TableCell>{user.name}</TableCell>
+                        <TableCell>
+                          {editingUserId === user.id ? (
+                            <Select
+                              value={editingRole}
+                              onValueChange={setEditingRole}
+                            >
+                              <SelectTrigger className="w-[180px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {roles.map((role) => (
+                                  <SelectItem key={role.id} value={role.name}>
+                                    {role.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <div className="flex gap-1">
+                              {user.roles && user.roles.length > 0 ? (
+                                user.roles.map((role) => (
+                                  <Badge key={role.id} variant="secondary">
+                                    {role.name}
+                                  </Badge>
+                                ))
+                              ) : user.role ? (
+                                <Badge variant="secondary">{user.role}</Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">Tidak ada</span>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {editingUserId === user.id ? (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSaveEdit(user.id)}
+                              >
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleCancelEdit}
+                              >
+                                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleStartEdit(user)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>

@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Download, Calendar, User, FileText } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Search, Download, Calendar, User, FileText, Eye } from "lucide-react"
 import { toast } from "sonner"
 // Simple date formatter
 const formatDate = (dateString: string) => {
@@ -40,6 +41,8 @@ export default function ActivityLogsPage() {
     per_page: 15,
     page: 1,
   })
+  const [selectedLog, setSelectedLog] = React.useState<ActivityLogResource | null>(null)
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = React.useState(false)
 
   // Fetch activity logs
   const fetchLogs = React.useCallback(async () => {
@@ -47,9 +50,14 @@ export default function ActivityLogsPage() {
     try {
       const response = await activityLogsApi.getLogs(filters)
       if (response) {
-        setLogs(response.data || [])
+        const logsData = response.data || []
+        setLogs(logsData)
         if (response.meta) {
           setPagination(response.meta)
+        }
+        // Debug: Check if changes are present
+        if (logsData.length > 0 && logsData[0].changes) {
+          console.log("Activity log changes detected:", logsData[0].changes)
         }
       }
     } catch (error) {
@@ -162,21 +170,30 @@ export default function ActivityLogsPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Event</label>
               <Select
-                value={filters.event || ""}
+                value={filters.event || undefined}
                 onValueChange={(value) =>
-                  handleFilterChange("event", value || undefined)
+                  handleFilterChange("event", value)
                 }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Semua Event" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Event</SelectItem>
                   <SelectItem value="created">Created</SelectItem>
                   <SelectItem value="updated">Updated</SelectItem>
                   <SelectItem value="deleted">Deleted</SelectItem>
                 </SelectContent>
               </Select>
+              {filters.event && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-1 text-xs"
+                  onClick={() => handleFilterChange("event", undefined)}
+                >
+                  Hapus filter
+                </Button>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Tanggal Mulai</label>
@@ -228,6 +245,7 @@ export default function ActivityLogsPage() {
                     <TableHead>ID</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Event</TableHead>
+                    <TableHead>Perubahan</TableHead>
                     <TableHead>Causer</TableHead>
                     <TableHead>Subject</TableHead>
                     <TableHead>Tanggal</TableHead>
@@ -248,6 +266,72 @@ export default function ActivityLogsPage() {
                         <Badge variant={getEventBadge(log.event)}>
                           {log.event}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {log.changes && log.changes.length > 0 ? (
+                          <div className="space-y-1.5 max-w-md">
+                            {log.changes.slice(0, 2).map((change, idx) => (
+                              <div key={idx} className="text-xs">
+                                <p className="font-medium text-muted-foreground mb-1">
+                                  {change.field}
+                                </p>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {change.old !== null ? (
+                                    <>
+                                      <span className="line-through text-red-600 bg-red-50 dark:bg-red-950 px-1.5 py-0.5 rounded text-xs">
+                                        {change.old}
+                                      </span>
+                                      <span className="text-muted-foreground text-xs">→</span>
+                                    </>
+                                  ) : (
+                                    <span className="text-muted-foreground text-xs">(baru)</span>
+                                  )}
+                                  <span className="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 px-1.5 py-0.5 rounded text-xs font-medium">
+                                    {change.new}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                            {log.changes.length > 2 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs h-auto p-1 mt-1"
+                                onClick={() => {
+                                  setSelectedLog(log)
+                                  setIsDetailDialogOpen(true)
+                                }}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Lihat {log.changes.length - 2} perubahan lainnya
+                              </Button>
+                            )}
+                            {log.changes.length <= 2 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs h-auto p-1 mt-1"
+                                onClick={() => {
+                                  setSelectedLog(log)
+                                  setIsDetailDialogOpen(true)
+                                }}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Detail
+                              </Button>
+                            )}
+                          </div>
+                        ) : log.event === 'deleted' ? (
+                          <span className="text-xs text-red-600 bg-red-50 dark:bg-red-950 px-2 py-1 rounded">
+                            Dihapus
+                          </span>
+                        ) : log.event === 'created' ? (
+                          <span className="text-xs text-green-600 bg-green-50 dark:bg-green-950 px-2 py-1 rounded">
+                            Dibuat
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Tidak ada perubahan</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {log.causer ? (
@@ -321,6 +405,57 @@ export default function ActivityLogsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Detail Changes Dialog */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Detail Perubahan</DialogTitle>
+            <DialogDescription>
+              {selectedLog?.description || "Perubahan yang dilakukan"}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedLog && selectedLog.changes && selectedLog.changes.length > 0 ? (
+            <div className="space-y-4 overflow-y-auto max-h-[60vh]">
+              {selectedLog.changes.map((change, idx) => (
+                <div key={idx} className="border rounded-lg p-4 space-y-2">
+                  <p className="font-semibold text-sm">{change.field}</p>
+                  <div className="flex items-center gap-3">
+                    {change.old !== null ? (
+                      <>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground mb-1">Nilai Lama:</p>
+                          <div className="line-through text-red-600 bg-red-50 dark:bg-red-950 px-3 py-2 rounded">
+                            {change.old || "(kosong)"}
+                          </div>
+                        </div>
+                        <span className="text-2xl text-muted-foreground">→</span>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground mb-1">Nilai Baru:</p>
+                          <div className="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 px-3 py-2 rounded font-medium">
+                            {change.new || "(kosong)"}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full">
+                        <p className="text-xs text-muted-foreground mb-1">Nilai Baru:</p>
+                        <div className="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 px-3 py-2 rounded font-medium">
+                          {change.new || "(kosong)"}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">
+              Tidak ada perubahan untuk ditampilkan
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

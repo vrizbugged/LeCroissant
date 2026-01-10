@@ -315,6 +315,11 @@ export interface ActivityLogResource {
     name: string
   } | null
   properties?: Record<string, any>
+  changes?: Array<{
+    field: string
+    old: string | null
+    new: string | null
+  }>
   created_at: string
 }
 
