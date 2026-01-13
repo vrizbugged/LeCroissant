@@ -8,7 +8,7 @@ export interface ProductResource {
   harga_grosir: number
   harga_formatted?: string // Formatted price from backend
   ketersediaan_stok: number
-  gambar_url?: string | null
+  image_url?: string | null
   status?: string // Aktif or Non Aktif
   created_at?: string | null
   updated_at?: string | null
@@ -20,7 +20,7 @@ export interface ProductFormData {
   deskripsi?: string
   harga_grosir: number
   ketersediaan_stok: number
-  gambar?: File | string // File for upload or string for existing image
+  image_url?: File | string // File for upload or string for existing image
   status?: string
 }
 

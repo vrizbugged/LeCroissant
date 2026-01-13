@@ -139,18 +139,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Save cart to localStorage whenever items change (only if authenticated)
   React.useEffect(() => {
-    if (isAuthenticated && items.length > 0) {
+    if (isAuthenticated) {
       const cartKey = getCartKey()
-      localStorage.setItem(cartKey, JSON.stringify(items))
+      
+      if (items.length > 0) {
+        // Kalau ada barang, simpan datanya
+        localStorage.setItem(cartKey, JSON.stringify(items))
+      } else {
+        // PERBAIKAN: Kalau kosong, WAJIB HAPUS key-nya dari memori!
+        localStorage.removeItem(cartKey)
+      }
     }
-    // Dispatch custom event for navbar to update
+    
+    // Beritahu komponen lain (Navbar) bahwa keranjang berubah
     window.dispatchEvent(new Event("cartUpdated"))
+    
+    // Event tambahan khusus untuk Next.js agar lebih responsif
+    window.dispatchEvent(new Event("storage")) 
   }, [items, isAuthenticated])
 
   const addItem = React.useCallback((product: ProductResource, quantity: number) => {
     // Note: Authentication check should be done before calling this function
     // This function assumes user is already authenticated
     
+
     setItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.product.id === product.id)
       
@@ -203,6 +215,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = React.useCallback(() => {
     setItems([])
+    if (typeof window !== 'undefined') {
+      const cartKey = getCartKey()
+      localStorage.removeItem(cartKey)
+      
+      // 3. Trigger update Navbar manual
+      window.dispatchEvent(new Event("cartUpdated"))
+    }
   }, [])
 
   const getTotalItems = React.useCallback(() => {

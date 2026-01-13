@@ -32,13 +32,6 @@ const statusLabels: Record<OrderResource['status'], string> = {
   dibatalkan: 'Dibatalkan',
 }
 
-const statusLabelsEn: Record<OrderResource['status'], string> = {
-  menunggu_konfirmasi: 'Waiting for Confirmation',
-  diproses: 'Processing',
-  selesai: 'Completed',
-  dibatalkan: 'Cancelled',
-}
-
 export default function MyTransactionsPage() {
   const router = useRouter()
   const [orders, setOrders] = React.useState<OrderResource[]>([])
@@ -162,222 +155,224 @@ export default function MyTransactionsPage() {
         </div>
 
         {orders.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-              <Receipt className="h-16 w-16 text-muted-foreground" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold mb-2">Belum Ada Transaksi</h3>
-                <p className="text-muted-foreground mb-4">
-                  Anda belum melakukan pemesanan. Mulai berbelanja untuk melihat transaksi di sini.
-                </p>
-                <Button onClick={() => router.push("/shop")} className="bg-orange-600 hover:bg-orange-700 text-white">
-                  Mulai Berbelanja
-                </Button>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <Receipt className="h-16 w-16 text-muted-foreground" />
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold mb-2">Belum Ada Transaksi</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Anda belum melakukan pemesanan. Mulai berbelanja untuk melihat transaksi di sini.
+                  </p>
+                  <Button onClick={() => router.push("/shop")} className="bg-orange-600 hover:bg-orange-700 text-white">
+                    Mulai Berbelanja
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {/* Section 1: Status Tracking Order Terbaru */}
+            {latestOrder && latestOrder.status !== 'dibatalkan' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Status Pesanan Terbaru</CardTitle>
+                  <CardDescription>
+                    Nomor Order: <span className="font-semibold text-foreground">#{latestOrder.id}</span>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Status Progress Indicator */}
+                  <div className="relative">
+                    <div className="flex items-center justify-between">
+                      {statusSteps.map((step, index) => {
+                        const currentStepIndex = getStatusStepIndex(latestOrder.status)
+                        const isActive = index <= currentStepIndex
+                        const isCurrent = index === currentStepIndex
+                        const Icon = step.icon
+
+                        return (
+                          <React.Fragment key={step.key}>
+                            <div className="flex flex-col items-center flex-1">
+                              <div
+                                className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-colors ${
+                                  isActive
+                                    ? 'bg-orange-600 border-orange-600 text-white'
+                                    : 'bg-background border-muted text-muted-foreground'
+                                }`}
+                              >
+                                <Icon className="h-6 w-6" />
+                              </div>
+                              <p
+                                className={`mt-2 text-sm font-medium text-center ${
+                                  isActive ? 'text-foreground' : 'text-muted-foreground'
+                                }`}
+                              >
+                                {step.label}
+                              </p>
+                              {isCurrent && (
+                                <Badge className="mt-1 bg-orange-600 text-white">
+                                  Status Saat Ini
+                                </Badge>
+                              )}
+                            </div>
+                            {index < statusSteps.length - 1 && (
+                              <div
+                                className={`flex-1 h-0.5 mx-2 ${
+                                  isActive ? 'bg-orange-600' : 'bg-muted'
+                                }`}
+                              />
+                            )}
+                          </React.Fragment>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Order Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Harga</p>
+                      <p className="text-xl font-bold text-orange-600">
+                        {formatCurrency(latestOrder.total_price)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Tanggal Pemesanan</p>
+                      <p className="font-medium">{formatDate(latestOrder.created_at)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Jumlah Item</p>
+                      <p className="font-medium">
+                        {latestOrder.products?.reduce((sum, p) => sum + p.pivot.quantity, 0) || 0} unit
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Section 2: Histori Transaksi */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Histori Transaksi</h2>
+              <div className="space-y-4">
+                {orders.map((order) => (
+                  <Card key={order.id} className="overflow-hidden">
+                    <CardHeader className="bg-muted/50">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <Receipt className="h-5 w-5" />
+                            Pesanan #{order.id}
+                          </CardTitle>
+                          <CardDescription className="mt-1">
+                            Dibuat pada {formatDate(order.created_at)}
+                          </CardDescription>
+                        </div>
+                        <Badge className={statusColors[order.status]}>
+                          {statusLabels[order.status]}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        {/* Order Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <div className="text-sm text-muted-foreground">Jumlah Item</div>
+                              <div className="font-medium">
+                                {order.products?.reduce((sum, p) => sum + p.pivot.quantity, 0) || 0} unit
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <div className="text-sm text-muted-foreground">Total Harga</div>
+                              <div className="font-medium text-lg text-orange-600">{formatCurrency(order.total_price)}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <div className="text-sm text-muted-foreground">Tanggal</div>
+                              <div className="font-medium">{formatDate(order.created_at)}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Order Items */}
+                        {order.products && order.products.length > 0 && (
+                          <div>
+                            <h4 className="font-semibold mb-3">Detail Produk</h4>
+                            <div className="border rounded-lg overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Produk</TableHead>
+                                    <TableHead>Jumlah</TableHead>
+                                    <TableHead className="text-right">Harga Satuan</TableHead>
+                                    <TableHead className="text-right">Subtotal</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {order.products.map((product) => (
+                                    <TableRow key={product.id}>
+                                      <TableCell>
+                                        <div className="flex items-center gap-3">
+                                          {product.image_url && (
+                                            <img
+                                              src={product.image_url}
+                                              alt={product.name}
+                                              className="w-12 h-12 object-cover rounded"
+                                            />
+                                          )}
+                                          <div>
+                                            <div className="font-medium">{product.name}</div>
+                                            {product.description && (
+                                              <div className="text-sm text-muted-foreground">
+                                                {product.description}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>{product.pivot.quantity}</TableCell>
+                                      <TableCell className="text-right">
+                                        {formatCurrency(product.pivot.price_at_purchase)}
+                                      </TableCell>
+                                      <TableCell className="text-right font-medium">
+                                        {formatCurrency(
+                                          product.pivot.quantity * product.pivot.price_at_purchase
+                                        )}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Special Notes */}
+                        {order.special_notes && (
+                          <div className="bg-muted/50 p-3 rounded-lg">
+                            <div className="text-sm font-medium mb-1">Catatan Khusus:</div>
+                            <div className="text-sm text-muted-foreground">{order.special_notes}</div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {/* Section 1: Status Tracking Order Terbaru */}
-          {latestOrder && latestOrder.status !== 'dibatalkan' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Status Pesanan Terbaru</CardTitle>
-                <CardDescription>
-                  Nomor Order: <span className="font-semibold text-foreground">#{latestOrder.id}</span>
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Status Progress Indicator */}
-                <div className="relative">
-                  <div className="flex items-center justify-between">
-                    {statusSteps.map((step, index) => {
-                      const currentStepIndex = getStatusStepIndex(latestOrder.status)
-                      const isActive = index <= currentStepIndex
-                      const isCurrent = index === currentStepIndex
-                      const Icon = step.icon
-
-                      return (
-                        <React.Fragment key={step.key}>
-                          <div className="flex flex-col items-center flex-1">
-                            <div
-                              className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-colors ${
-                                isActive
-                                  ? 'bg-orange-600 border-orange-600 text-white'
-                                  : 'bg-background border-muted text-muted-foreground'
-                              }`}
-                            >
-                              <Icon className="h-6 w-6" />
-                            </div>
-                            <p
-                              className={`mt-2 text-sm font-medium text-center ${
-                                isActive ? 'text-foreground' : 'text-muted-foreground'
-                              }`}
-                            >
-                              {step.label}
-                            </p>
-                            {isCurrent && (
-                              <Badge className="mt-1 bg-orange-600 text-white">
-                                Status Saat Ini
-                              </Badge>
-                            )}
-                          </div>
-                          {index < statusSteps.length - 1 && (
-                            <div
-                              className={`flex-1 h-0.5 mx-2 ${
-                                isActive ? 'bg-orange-600' : 'bg-muted'
-                              }`}
-                            />
-                          )}
-                        </React.Fragment>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Order Info */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Harga</p>
-                    <p className="text-xl font-bold text-orange-600">
-                      {formatCurrency(latestOrder.total_price)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Tanggal Pemesanan</p>
-                    <p className="font-medium">{formatDate(latestOrder.created_at)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Jumlah Item</p>
-                    <p className="font-medium">
-                      {latestOrder.products?.reduce((sum, p) => sum + p.pivot.quantity, 0) || 0} unit
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Section 2: Histori Transaksi */}
-          <div>
-            <h2 className="text-2xl font-bold mb-4">Histori Transaksi</h2>
-            <div className="space-y-4">
-              {orders.map((order) => (
-            <Card key={order.id} className="overflow-hidden">
-              <CardHeader className="bg-muted/50">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Receipt className="h-5 w-5" />
-                      Pesanan #{order.id}
-                    </CardTitle>
-                    <CardDescription className="mt-1">
-                      Dibuat pada {formatDate(order.created_at)}
-                    </CardDescription>
-                  </div>
-                  <Badge className={statusColors[order.status]}>
-                    {statusLabels[order.status]}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {/* Order Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Jumlah Item</div>
-                        <div className="font-medium">
-                          {order.products?.reduce((sum, p) => sum + p.pivot.quantity, 0) || 0} unit
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Total Harga</div>
-                        <div className="font-medium text-lg text-orange-600">{formatCurrency(order.total_price)}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Tanggal</div>
-                        <div className="font-medium">{formatDate(order.created_at)}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Order Items */}
-                  {order.products && order.products.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold mb-3">Detail Produk</h4>
-                      <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Produk</TableHead>
-                              <TableHead>Jumlah</TableHead>
-                              <TableHead className="text-right">Harga Satuan</TableHead>
-                              <TableHead className="text-right">Subtotal</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {order.products.map((product) => (
-                              <TableRow key={product.id}>
-                                <TableCell>
-                                  <div className="flex items-center gap-3">
-                                    {product.image_url && (
-                                      <img
-                                        src={product.image_url}
-                                        alt={product.name}
-                                        className="w-12 h-12 object-cover rounded"
-                                      />
-                                    )}
-                                    <div>
-                                      <div className="font-medium">{product.name}</div>
-                                      {product.description && (
-                                        <div className="text-sm text-muted-foreground">
-                                          {product.description}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell>{product.pivot.quantity}</TableCell>
-                                <TableCell className="text-right">
-                                  {formatCurrency(product.pivot.price_at_purchase)}
-                                </TableCell>
-                                <TableCell className="text-right font-medium">
-                                  {formatCurrency(
-                                    product.pivot.quantity * product.pivot.price_at_purchase
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Special Notes */}
-                  {order.special_notes && (
-                    <div className="bg-muted/50 p-3 rounded-lg">
-                      <div className="text-sm font-medium mb-1">Catatan Khusus:</div>
-                      <div className="text-sm text-muted-foreground">{order.special_notes}</div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
-
