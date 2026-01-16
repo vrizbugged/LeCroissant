@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Receipt, Package, Calendar, DollarSign, AlertCircle, CheckCircle2, Clock, Truck, Loader2 } from "lucide-react"
+import { Receipt, Package, Calendar, DollarSign, AlertCircle, CheckCircle2, Clock, Truck, Loader2, ChevronDown, ChevronUp } from "lucide-react"
 import { Navbar } from "@/components/navbar/navbar"
 import { toast } from "sonner"
 
@@ -39,6 +39,24 @@ export default function MyTransactionsPage() {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [previousStatus, setPreviousStatus] = React.useState<OrderResource['status'] | null>(null)
+  // State untuk mengelola expanded/collapsed state per order ID
+  const [expandedOrders, setExpandedOrders] = React.useState<Set<number>>(new Set())
+  
+  // Toggle expanded state untuk order tertentu
+  const toggleOrderExpanded = (orderId: number) => {
+    setExpandedOrders(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId)
+      } else {
+        newSet.add(orderId)
+      }
+      return newSet
+    })
+  }
+  
+  // Check apakah order sedang expanded
+  const isOrderExpanded = (orderId: number) => expandedOrders.has(orderId)
 
   // Fetch orders
   const fetchMyOrders = React.useCallback(async (silent = false) => {
@@ -203,15 +221,31 @@ export default function MyTransactionsPage() {
             {latestOrder && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Status Pesanan Terbaru</CardTitle>
-                  <CardDescription>
-                    Nomor Order: <span className="font-semibold text-foreground">#{latestOrder.id}</span>
-                    {latestOrder.status === 'dibatalkan' && (
-                      <Badge className="ml-2 bg-red-500/10 text-red-600 dark:text-red-400">
-                        Dibatalkan
-                      </Badge>
-                    )}
-                  </CardDescription>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle>Status Pesanan Terbaru</CardTitle>
+                      <CardDescription>
+                        Nomor Order: <span className="font-semibold text-foreground">#{latestOrder.id}</span>
+                        {latestOrder.status === 'dibatalkan' && (
+                          <Badge className="ml-2 bg-red-500/10 text-red-600 dark:text-red-400">
+                            Dibatalkan
+                          </Badge>
+                        )}
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleOrderExpanded(latestOrder.id)}
+                      className="h-8 w-8"
+                    >
+                      {isOrderExpanded(latestOrder.id) ? (
+                        <ChevronUp className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Status Progress Indicator - hanya tampil jika tidak dibatalkan */}
@@ -283,8 +317,8 @@ export default function MyTransactionsPage() {
                     </div>
                   </div>
 
-                  {/* Detail Produk Pesanan Terbaru */}
-                  {latestOrder.products && latestOrder.products.length > 0 && (
+                  {/* Detail Produk Pesanan Terbaru - Collapsible */}
+                  {latestOrder.products && latestOrder.products.length > 0 && isOrderExpanded(latestOrder.id) && (
                     <div className="pt-4 border-t">
                       <h4 className="font-semibold mb-3">Detail Produk</h4>
                       <div className="space-y-2">
@@ -326,11 +360,25 @@ export default function MyTransactionsPage() {
                   <Card key={order.id} className="overflow-hidden">
                     <CardHeader className="bg-muted/50">
                       <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <Receipt className="h-5 w-5" />
-                            Pesanan #{order.id}
-                          </CardTitle>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              <Receipt className="h-5 w-5" />
+                              Pesanan #{order.id}
+                            </CardTitle>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => toggleOrderExpanded(order.id)}
+                              className="h-8 w-8"
+                            >
+                              {isOrderExpanded(order.id) ? (
+                                <ChevronUp className="h-5 w-5" />
+                              ) : (
+                                <ChevronDown className="h-5 w-5" />
+                              )}
+                            </Button>
+                          </div>
                           <CardDescription className="mt-1">
                             Dibuat pada {formatDate(order.created_at)}
                           </CardDescription>
@@ -369,8 +417,8 @@ export default function MyTransactionsPage() {
                           </div>
                         </div>
 
-                        {/* Order Items */}
-                        {order.products && order.products.length > 0 && (
+                        {/* Order Items - Collapsible */}
+                        {order.products && order.products.length > 0 && isOrderExpanded(order.id) && (
                           <div>
                             <h4 className="font-semibold mb-3">Detail Produk</h4>
                             <div className="border rounded-lg overflow-hidden">
@@ -422,8 +470,8 @@ export default function MyTransactionsPage() {
                           </div>
                         )}
 
-                        {/* Special Notes */}
-                        {order.special_notes && (
+                        {/* Special Notes - Collapsible */}
+                        {order.special_notes && isOrderExpanded(order.id) && (
                           <div className="bg-muted/50 p-3 rounded-lg">
                             <div className="text-sm font-medium mb-1">Catatan Khusus:</div>
                             <div className="text-sm text-muted-foreground">{order.special_notes}</div>

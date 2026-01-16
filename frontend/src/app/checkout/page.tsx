@@ -68,6 +68,7 @@ export default function CheckoutPage() {
   const [user, setUser] = React.useState<UserResource | null>(null)
   const [loadingUser, setLoadingUser] = React.useState(true)
   const [paymentProofPreview, setPaymentProofPreview] = React.useState<string | null>(null)
+  const [orderSuccess, setOrderSuccess] = React.useState(false) // Flag untuk mencegah redirect ke cart setelah order berhasil
 
   // Initialize form first
   const form = useForm<CheckoutFormValues>({
@@ -169,17 +170,19 @@ export default function CheckoutPage() {
   }, [form])
 
   // Redirect jika belum login atau cart kosong
+  // Tapi jangan redirect jika order baru saja berhasil dibuat (orderSuccess = true)
   React.useEffect(() => {
     if (!isAuthenticated) {
       router.push("/login")
       return
     }
-    if (items.length === 0) {
+    // Jangan redirect ke cart jika order baru saja berhasil dibuat
+    if (items.length === 0 && !orderSuccess) {
       toast.error("Keranjang masih kosong")
       router.push("/cart")
       return
     }
-  }, [isAuthenticated, items.length, router])
+  }, [isAuthenticated, items.length, router, orderSuccess])
 
   // Format harga ke Rupiah
   const formatPrice = (price: number): string => {
@@ -238,12 +241,18 @@ export default function CheckoutPage() {
       const order = await ordersApi.create(orderData)
 
       if (order) {
-        // Clear cart first before redirect
+        // Set flag orderSuccess SEBELUM clearCart untuk mencegah useEffect redirect ke cart
+        setOrderSuccess(true)
+        
+        // Clear cart
         clearCart()
+        
+        // Tampilkan success message
         toast.success("Pesanan berhasil dibuat!")
         
-        // Redirect immediately using replace to prevent back button returning to checkout
-        router.replace('/my-transactions')
+        // Redirect ke my-transactions menggunakan window.location untuk hard redirect
+        // Ini memastikan redirect terjadi meskipun ada useEffect lain yang mencoba redirect
+        window.location.href = '/my-transactions'
       } else {
         toast.error("Gagal membuat pesanan. Silakan coba lagi.")
       }
