@@ -14,12 +14,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { LogOut, LogIn, ShoppingCartIcon, ShoppingBasket, House, User, Receipt, UserPlus } from "lucide-react"
+import { authApi } from "@/lib/api"
+import type { UserResource } from "@/types/api"
 
 export function Navbar() {
   const router = useRouter()
   // State untuk menyimpan status login
   const [isLoggedIn, setIsLoggedIn] = React.useState(false)
   const [cartItemCount, setCartItemCount] = React.useState(0)
+  const [userData, setUserData] = React.useState<UserResource | null>(null)
 
   // Get cart items count based on user authentication
   const getCartCount = () => {
@@ -86,6 +89,47 @@ export function Navbar() {
     }
   }, [isLoggedIn])
 
+  // Fetch user data when logged in
+  React.useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem("token") || localStorage.getItem("auth_token")
+      if (token) {
+        try {
+          const user = await authApi.me()
+          if (user) {
+            setUserData(user)
+            setIsLoggedIn(true)
+          } else {
+            setUserData(null)
+            setIsLoggedIn(false)
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error)
+          setUserData(null)
+          setIsLoggedIn(false)
+        }
+      } else {
+        setUserData(null)
+        setIsLoggedIn(false)
+      }
+    }
+    
+    fetchUserData()
+    
+    // Listen for auth changes
+    const handleAuthChange = () => {
+      fetchUserData()
+    }
+    
+    window.addEventListener("authChanged", handleAuthChange)
+    window.addEventListener("storage", handleAuthChange)
+    
+    return () => {
+      window.removeEventListener("authChanged", handleAuthChange)
+      window.removeEventListener("storage", handleAuthChange)
+    }
+  }, [])
+
   // Efek ini jalan otomatis saat halaman dimuat
   React.useEffect(() => {
     const checkAuth = () => {
@@ -117,6 +161,7 @@ export function Navbar() {
     localStorage.removeItem("auth_token") // Hapus auth_token juga
     localStorage.removeItem("user")  // Hapus data user (opsional)
     setIsLoggedIn(false)             // Update tampilan jadi "belum login"
+    setUserData(null)                // Clear user data
     
     // Dispatch event untuk cart context agar cart di-reload
     window.dispatchEvent(new Event("authChanged"))
@@ -181,9 +226,14 @@ export function Navbar() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-sm bg-white border-white/30 text-orange-600 hover:bg-white/90 hover:text-orange-700 shadow-sm"
+                  className="text-sm bg-white border-white/30 text-orange-600 hover:bg-white/90 hover:text-orange-700 shadow-sm gap-2"
                 >
                   <User className="h-4 w-4" />
+                  {isLoggedIn && userData?.name && (
+                    <span className="hidden sm:inline-block max-w-[120px] truncate">
+                      {userData.name}
+                    </span>
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
