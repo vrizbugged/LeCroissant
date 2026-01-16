@@ -31,23 +31,25 @@ const checkoutFormSchema = z.object({
   phone_number: z.string().min(1, "Nomor telepon wajib diisi"),
   address: z.string().min(1, "Alamat wajib diisi"),
   special_notes: z.string().optional(),
-  payment_proof: z.instanceof(File).optional().or(z.literal("")),
-}).refine((data) => {
-  // Payment proof is optional but if provided must be valid file
-  if (data.payment_proof && data.payment_proof instanceof File) {
+  payment_proof: z.union([
+    z.instanceof(File),
+    z.undefined(),
+  ]).refine((file) => {
+    if (!file || !(file instanceof File)) {
+      return false
+    }
     const maxSize = 5 * 1024 * 1024 // 5MB
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
-    if (data.payment_proof.size > maxSize) {
+    if (file.size > maxSize) {
       return false
     }
-    if (!allowedTypes.includes(data.payment_proof.type)) {
+    if (!allowedTypes.includes(file.type)) {
       return false
     }
-  }
-  return true
-}, {
-  message: "File bukti pembayaran harus berupa gambar (JPG, PNG) atau PDF, maksimal 5MB",
-  path: ["payment_proof"],
+    return true
+  }, {
+    message: "Bukti pembayaran wajib diupload. File harus berupa gambar (JPG, PNG) atau PDF, maksimal 5MB",
+  }),
 })
 
 type CheckoutFormValues = z.infer<typeof checkoutFormSchema>
@@ -128,12 +130,17 @@ export default function CheckoutPage() {
             }
           }
           
-          // Set form values
+          // Set form values dengan shouldValidate untuk trigger validasi
           if (phoneNumber) {
-            form.setValue('phone_number', phoneNumber)
+            form.setValue('phone_number', phoneNumber, { shouldValidate: true })
           }
           if (address) {
-            form.setValue('address', address)
+            form.setValue('address', address, { shouldValidate: true })
+          }
+          
+          // Trigger validasi semua field setelah auto-fill selesai
+          if (phoneNumber && address) {
+            form.trigger(['phone_number', 'address'])
           }
         }
       } catch (error) {
@@ -144,6 +151,22 @@ export default function CheckoutPage() {
     }
     loadUserAndPrefill()
   }, [isAuthenticated, form])
+
+  // Trigger validasi saat phoneNumber atau address berubah (termasuk saat auto-fill)
+  // Menggunakan subscription untuk watch perubahan nilai
+  React.useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      // Trigger validasi saat phone_number atau address berubah
+      if (name === 'phone_number' || name === 'address') {
+        if (value.phone_number && value.address) {
+          form.trigger(['phone_number', 'address']).catch(() => {
+            // Ignore validation errors, just trigger the validation
+          })
+        }
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [form])
 
   // Redirect jika belum login atau cart kosong
   React.useEffect(() => {
@@ -194,11 +217,18 @@ export default function CheckoutPage() {
     setLoading(true)
     try {
       // Prepare order data
+      // payment_proof sekarang required, jadi harus selalu ada
+      if (!(data.payment_proof instanceof File)) {
+        toast.error("Bukti pembayaran wajib diupload")
+        setLoading(false)
+        return
+      }
+
       const orderData = {
         phone_number: data.phone_number,
         address: data.address,
         special_notes: data.special_notes || undefined,
-        payment_proof: data.payment_proof instanceof File ? data.payment_proof : undefined,
+        payment_proof: data.payment_proof,
         products: items.map((item) => ({
           id: item.product.id,
           quantity: item.quantity,
@@ -219,6 +249,7 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       console.error("Error creating order:", error)
+      // Tampilkan error sebagai toast, tidak redirect ke cart
       toast.error(error instanceof Error ? error.message : "Terjadi kesalahan saat membuat pesanan")
     } finally {
       setLoading(false)
@@ -256,8 +287,13 @@ export default function CheckoutPage() {
   }
 
   const removePaymentProof = () => {
-    form.setValue('payment_proof', undefined)
+    form.setValue('payment_proof', undefined, { shouldValidate: true })
     setPaymentProofPreview(null)
+    // Reset file input
+    const fileInput = document.getElementById('payment_proof_input') as HTMLInputElement
+    if (fileInput) {
+      fileInput.value = ''
+    }
   }
 
   // Format nomor rekening dengan spasi untuk kemudahan membaca
@@ -295,6 +331,24 @@ export default function CheckoutPage() {
 
   const totalPrice = getTotalPrice()
   const totalItems = items.reduce((total, item) => total + item.quantity, 0)
+
+  // Watch form values untuk disabled button
+  const phoneNumber = form.watch('phone_number')
+  const address = form.watch('address')
+  const paymentProof = form.watch('payment_proof')
+
+  // Manual validation check - tidak hanya mengandalkan form.formState.isValid
+  // karena mungkin belum ter-update saat auto-fill
+  const hasValidPhoneNumber = phoneNumber && phoneNumber.trim().length > 0
+  const hasValidAddress = address && address.trim().length > 0
+  const hasValidPaymentProof = paymentProof && paymentProof instanceof File
+
+  // Button disabled jika form belum lengkap
+  // Tidak mengandalkan form.formState.isValid karena mungkin belum ter-update saat auto-fill
+  const isSubmitDisabled = loading || 
+    !hasValidPhoneNumber || 
+    !hasValidAddress || 
+    !hasValidPaymentProof
 
   return (
     <div className="min-h-screen bg-background">
@@ -556,8 +610,8 @@ export default function CheckoutPage() {
                     </Button>
                     <Button
                       type="submit"
-                      disabled={loading}
-                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                      disabled={isSubmitDisabled}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? (
                         <>

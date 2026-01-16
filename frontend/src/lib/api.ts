@@ -568,10 +568,8 @@ export const ordersApi = {
         formData.append('special_notes', data.special_notes)
       }
       
-      // Add payment_proof file if exists
-      if (data.payment_proof instanceof File) {
-        formData.append('payment_proof', data.payment_proof)
-      }
+      // Add payment_proof file (required)
+      formData.append('payment_proof', data.payment_proof)
 
       const token = typeof window !== 'undefined' ? getAuthToken() : null
       const headers: HeadersInit = {

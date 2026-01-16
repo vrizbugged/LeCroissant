@@ -137,7 +137,7 @@ export interface OrderFormData {
   phone_number: string
   address: string
   special_notes?: string
-  payment_proof?: File
+  payment_proof: File
   products: Array<{
     id: number
     quantity: number
