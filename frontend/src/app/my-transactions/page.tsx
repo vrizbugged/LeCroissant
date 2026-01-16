@@ -15,9 +15,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Receipt, Package, Calendar, DollarSign, AlertCircle, CheckCircle2, Clock, Truck, Loader2, ChevronDown, ChevronUp } from "lucide-react"
+import { Receipt, Package, Calendar, DollarSign, AlertCircle, CheckCircle2, Clock, Truck, Loader2, ChevronDown, ChevronUp, Printer } from "lucide-react"
 import { Navbar } from "@/components/navbar/navbar"
 import { toast } from "sonner"
+import { InvoicePreview } from "@/components/invoice/invoice-preview"
 
 const statusColors: Record<OrderResource['status'], string> = {
   menunggu_konfirmasi: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
@@ -43,6 +44,9 @@ export default function MyTransactionsPage() {
   const [previousStatus, setPreviousStatus] = React.useState<OrderResource['status'] | null>(null)
   // State untuk mengelola expanded/collapsed state per order ID
   const [expandedOrders, setExpandedOrders] = React.useState<Set<number>>(new Set())
+  // State untuk mengelola invoice preview modal
+  const [invoiceOrder, setInvoiceOrder] = React.useState<OrderResource | null>(null)
+  const [invoiceOpen, setInvoiceOpen] = React.useState(false)
   
   // Toggle expanded state untuk order tertentu
   const toggleOrderExpanded = (orderId: number) => {
@@ -59,6 +63,12 @@ export default function MyTransactionsPage() {
   
   // Check apakah order sedang expanded
   const isOrderExpanded = (orderId: number) => expandedOrders.has(orderId)
+
+  // Handler untuk membuka invoice preview
+  const handleOpenInvoice = (order: OrderResource) => {
+    setInvoiceOrder(order)
+    setInvoiceOpen(true)
+  }
 
   // Fetch orders
   const fetchMyOrders = React.useCallback(async (silent = false) => {
@@ -321,6 +331,17 @@ export default function MyTransactionsPage() {
                     </div>
                   </div>
 
+                  {/* Button Cetak Invoice */}
+                  <div className="pt-4 border-t">
+                    <Button
+                      onClick={() => handleOpenInvoice(latestOrder)}
+                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <Printer className="h-4 w-4 mr-2" />
+                      Cetak Invoice
+                    </Button>
+                  </div>
+
                   {/* Detail Produk Pesanan Terbaru - Collapsible */}
                   {latestOrder.products && latestOrder.products.length > 0 && isOrderExpanded(latestOrder.id) && (
                     <div className="pt-4 border-t">
@@ -481,6 +502,18 @@ export default function MyTransactionsPage() {
                             <div className="text-sm text-muted-foreground">{order.special_notes}</div>
                           </div>
                         )}
+
+                        {/* Button Cetak Invoice */}
+                        <div className="pt-4 border-t">
+                          <Button
+                            onClick={() => handleOpenInvoice(order)}
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                          >
+                            <Printer className="h-4 w-4 mr-2" />
+                            Cetak Invoice
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -490,6 +523,13 @@ export default function MyTransactionsPage() {
             )}
           </div>
         )}
+
+        {/* Invoice Preview Modal */}
+        <InvoicePreview
+          order={invoiceOrder}
+          open={invoiceOpen}
+          onOpenChange={setInvoiceOpen}
+        />
       </div>
     </div>
   )
