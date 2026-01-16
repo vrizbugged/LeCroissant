@@ -35,7 +35,7 @@ export interface OrderResource {
   client_id?: number
   user_id?: number // Deprecated, use client instead
   delivery_date: string
-  status: 'menunggu_konfirmasi' | 'diproses' | 'selesai' | 'dibatalkan'
+  status: 'menunggu_konfirmasi' | 'diproses' | 'siap_di_pickup' | 'selesai' | 'dibatalkan'
   total_price: number
   special_notes?: string | null
   created_at: string
@@ -148,17 +148,17 @@ export interface OrderFormData {
 export interface OrderUpdateData {
   delivery_date?: string
   special_notes?: string | null
-  status?: 'menunggu_konfirmasi' | 'diproses' | 'selesai' | 'dibatalkan'
+  status?: 'menunggu_konfirmasi' | 'diproses' | 'siap_di_pickup' | 'selesai' | 'dibatalkan'
 }
 
 // Order Status Update
 export interface OrderStatusUpdate {
-  status: 'menunggu_konfirmasi' | 'diproses' | 'selesai' | 'dibatalkan'
+  status: 'menunggu_konfirmasi' | 'diproses' | 'siap_di_pickup' | 'selesai' | 'dibatalkan'
 }
 
 // Order List Query Parameters
 export interface OrderListParams {
-  status?: 'menunggu_konfirmasi' | 'diproses' | 'selesai' | 'dibatalkan'
+  status?: 'menunggu_konfirmasi' | 'diproses' | 'siap_di_pickup' | 'selesai' | 'dibatalkan'
   user_id?: number
   per_page?: number
   page?: number

@@ -17,6 +17,7 @@ interface RecentOrdersTableProps {
 const statusColors: Record<OrderResource['status'], string> = {
   menunggu_konfirmasi: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
   diproses: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  siap_di_pickup: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
   selesai: 'bg-green-500/10 text-green-600 dark:text-green-400',
   dibatalkan: 'bg-red-500/10 text-red-600 dark:text-red-400',
 }
@@ -24,6 +25,7 @@ const statusColors: Record<OrderResource['status'], string> = {
 const statusLabels: Record<OrderResource['status'], string> = {
   menunggu_konfirmasi: 'Menunggu Konfirmasi',
   diproses: 'Diproses',
+  siap_di_pickup: 'Siap Di-Pickup',
   selesai: 'Selesai',
   dibatalkan: 'Dibatalkan',
 }

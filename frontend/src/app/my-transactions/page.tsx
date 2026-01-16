@@ -22,6 +22,7 @@ import { toast } from "sonner"
 const statusColors: Record<OrderResource['status'], string> = {
   menunggu_konfirmasi: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
   diproses: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  siap_di_pickup: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
   selesai: 'bg-green-500/10 text-green-600 dark:text-green-400',
   dibatalkan: 'bg-red-500/10 text-red-600 dark:text-red-400',
 }
@@ -29,6 +30,7 @@ const statusColors: Record<OrderResource['status'], string> = {
 const statusLabels: Record<OrderResource['status'], string> = {
   menunggu_konfirmasi: 'Menunggu Konfirmasi',
   diproses: 'Diproses',
+  siap_di_pickup: 'Siap Di-Pickup',
   selesai: 'Pesanan Selesai',
   dibatalkan: 'Dibatalkan',
 }
@@ -77,6 +79,7 @@ export default function MyTransactionsPage() {
             const statusLabels: Record<OrderResource['status'], string> = {
               menunggu_konfirmasi: 'Menunggu Konfirmasi',
               diproses: 'Diproses',
+              siap_di_pickup: 'Siap Di-Pickup',
               selesai: 'Pesanan Selesai',
               dibatalkan: 'Dibatalkan',
             }
@@ -146,7 +149,8 @@ export default function MyTransactionsPage() {
   // Status steps untuk tracking
   const statusSteps = [
     { key: 'menunggu_konfirmasi' as const, label: 'Menunggu Konfirmasi', icon: Clock },
-    { key: 'diproses' as const, label: 'Siap Di-Pickup', icon: Truck },
+    { key: 'diproses' as const, label: 'Diproses', icon: Package },
+    { key: 'siap_di_pickup' as const, label: 'Siap Di-Pickup', icon: Truck },
     { key: 'selesai' as const, label: 'Pesanan Selesai', icon: CheckCircle2 },
   ]
 

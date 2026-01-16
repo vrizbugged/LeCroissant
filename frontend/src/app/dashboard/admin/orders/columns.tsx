@@ -47,6 +47,10 @@ const getStatusBadge = (status: OrderResource["status"]) => {
       label: "Diproses",
       className: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
     },
+    siap_di_pickup: {
+      label: "Siap Di-Pickup",
+      className: "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800",
+    },
     selesai: {
       label: "Selesai",
       className: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
@@ -164,6 +168,13 @@ export const columns: ColumnDef<OrderResource>[] = [
                 onClick={() => handleStatusUpdate(order.id, "diproses")}
               >
                 Diproses
+              </DropdownMenuItem>
+            )}
+            {currentStatus !== "siap_di_pickup" && (
+              <DropdownMenuItem
+                onClick={() => handleStatusUpdate(order.id, "siap_di_pickup")}
+              >
+                Siap Di-Pickup
               </DropdownMenuItem>
             )}
             {currentStatus !== "selesai" && (
