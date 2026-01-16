@@ -28,12 +28,12 @@ export default function DashboardLayout({
 
       try {
         const user = JSON.parse(userStr)
-        const userRole = user.role
+        // Menggunakan Spatie Permission roles untuk authorization
         const hasAdminRole = user.roles?.some((r: any) => 
           r.name === 'Admin' || r.name === 'Super Admin'
         )
 
-        if ((userRole !== 'admin' && userRole !== 'super_admin') && !hasAdminRole) {
+        if (!hasAdminRole) {
           router.push('/')
           return
         }

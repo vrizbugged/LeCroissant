@@ -61,10 +61,8 @@ export default function RolesPage() {
         ])
         setRoles(rolesData || [])
         setPermissions(permissionsData || [])
-        // Filter users yang sudah punya role (admin, super_admin, atau roles array)
+        // Filter users yang sudah punya role (menggunakan Spatie Permission roles)
         const usersWithRoles = (assignedUsersData?.data || []).filter((user) => 
-          user.role === 'admin' || 
-          user.role === 'super_admin' || 
           (user.roles && user.roles.length > 0)
         )
         setAssignedUsers(usersWithRoles)
@@ -222,11 +220,9 @@ export default function RolesPage() {
     setUserEmail(user.email)
     setShowSuggestions(false)
     
-    // Set current role if exists
+    // Set current role if exists (menggunakan Spatie Permission roles)
     if (user.roles && user.roles.length > 0) {
       setSelectedRoleForUser(user.roles[0].name)
-    } else if (user.role) {
-      setSelectedRoleForUser(user.role)
     }
   }
 
@@ -280,8 +276,6 @@ export default function RolesPage() {
     setEditingUserId(user.id)
     if (user.roles && user.roles.length > 0) {
       setEditingRole(user.roles[0].name)
-    } else if (user.role) {
-      setEditingRole(user.role)
     } else {
       setEditingRole("")
     }
@@ -695,8 +689,6 @@ export default function RolesPage() {
                                     {role.name}
                                   </Badge>
                                 ))
-                              ) : user.role ? (
-                                <Badge variant="secondary">{user.role}</Badge>
                               ) : (
                                 <span className="text-muted-foreground text-sm">Tidak ada</span>
                               )}

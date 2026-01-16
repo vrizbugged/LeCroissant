@@ -89,9 +89,8 @@ export function AdminSidebar() {
           const userData = JSON.parse(userStr)
           setUser(userData)
           
-          // Check if user is super admin
-          const isSuper = userData.role === 'super_admin' || 
-                         (userData.roles && userData.roles.some((r: any) => r.name === 'Super Admin'))
+          // Check if user is super admin (menggunakan Spatie Permission roles)
+          const isSuper = userData.roles && userData.roles.some((r: any) => r.name === 'Super Admin')
           setIsSuperAdmin(isSuper)
         } catch (error) {
           console.error('Error parsing user data:', error)
