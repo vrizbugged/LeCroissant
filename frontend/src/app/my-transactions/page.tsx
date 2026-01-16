@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Receipt, Package, Calendar, DollarSign, AlertCircle, CheckCircle2, Clock, Truck, Loader2 } from "lucide-react"
 import { Navbar } from "@/components/navbar/navbar"
+import { toast } from "sonner"
 
 const statusColors: Record<OrderResource['status'], string> = {
   menunggu_konfirmasi: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
@@ -37,31 +38,55 @@ export default function MyTransactionsPage() {
   const [orders, setOrders] = React.useState<OrderResource[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [previousStatus, setPreviousStatus] = React.useState<OrderResource['status'] | null>(null)
 
   // Fetch orders
-  const fetchMyOrders = React.useCallback(async () => {
-    setError(null)
+  const fetchMyOrders = React.useCallback(async (silent = false) => {
+    if (!silent) {
+      setError(null)
+    }
     try {
       const response = await ordersApi.getMyOrders()
       if (response) {
         const sortedOrders = (response.data || []).sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )
+        
+        // Check if status changed for latest order
+        if (sortedOrders.length > 0) {
+          const currentStatus = sortedOrders[0].status
+          if (previousStatus !== null && previousStatus !== currentStatus) {
+            const statusLabels: Record<OrderResource['status'], string> = {
+              menunggu_konfirmasi: 'Menunggu Konfirmasi',
+              diproses: 'Diproses',
+              selesai: 'Pesanan Selesai',
+              dibatalkan: 'Dibatalkan',
+            }
+            toast.success(`Status pesanan #${sortedOrders[0].id} berubah menjadi: ${statusLabels[currentStatus]}`)
+          }
+          setPreviousStatus(currentStatus)
+        }
+        
         setOrders(sortedOrders)
       } else {
-        setError("Failed to load transactions")
+        if (!silent) {
+          setError("Failed to load transactions")
+        }
       }
     } catch (err) {
       console.error("Error fetching my orders:", err)
-      setError(err instanceof Error ? err.message : "Failed to load transactions")
+      if (!silent) {
+        setError(err instanceof Error ? err.message : "Failed to load transactions")
+      }
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [previousStatus])
 
   React.useEffect(() => {
     fetchMyOrders()
-  }, [fetchMyOrders])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount
 
   // Real-time polling untuk update status order terbaru
   React.useEffect(() => {
@@ -74,11 +99,12 @@ export default function MyTransactionsPage() {
     }
 
     const interval = setInterval(() => {
-      fetchMyOrders()
+      fetchMyOrders(true) // Silent fetch untuk polling
     }, 5000) // Poll setiap 5 detik
 
     return () => clearInterval(interval)
-  }, [orders, fetchMyOrders])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders.length]) // Only depend on orders.length to avoid infinite loop
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {

@@ -78,9 +78,9 @@ export default function CheckoutPage() {
     },
   })
 
-  // Load user data
+  // Load user data and pre-fill form
   React.useEffect(() => {
-    async function loadUser() {
+    async function loadUserAndPrefill() {
       if (!isAuthenticated) {
         setLoadingUser(false)
         return
@@ -90,13 +90,51 @@ export default function CheckoutPage() {
         const userData = await authApi.me()
         if (userData) {
           setUser(userData)
-          // Pre-fill form dengan data Client (prioritas) atau User
-          // Jika user memiliki Client, gunakan data Client, jika tidak gunakan data User
-          const phoneNumber = userData.client?.phone_number || userData.phone_number || ''
-          const address = userData.client?.address || userData.address || ''
           
-          form.setValue('phone_number', phoneNumber)
-          form.setValue('address', address)
+          // Prioritas pengisian data:
+          // 1. Data dari Client (yang sudah di-update dari order terakhir)
+          // 2. Data dari User (fallback)
+          // 3. Kosong jika tidak ada data
+          let phoneNumber = ''
+          let address = ''
+          
+          if (userData.client?.phone_number) {
+            phoneNumber = userData.client.phone_number
+          } else if (userData.phone_number) {
+            phoneNumber = userData.phone_number
+          }
+          
+          if (userData.client?.address) {
+            address = userData.client.address
+          } else if (userData.address) {
+            address = userData.address
+          }
+          
+          // Fallback: Jika Client belum ada atau data kosong, coba ambil dari order terakhir
+          // (meskipun seharusnya Client sudah dibuat/di-update saat order dibuat)
+          if ((!phoneNumber || !address)) {
+            try {
+              const ordersResponse = await ordersApi.getMyOrders({ per_page: 1 })
+              if (ordersResponse && ordersResponse.data && ordersResponse.data.length > 0) {
+                const latestOrder = ordersResponse.data[0]
+                // Data phone_number dan address sudah tersimpan di Client saat order dibuat
+                // Jika masih kosong, berarti Client belum dibuat atau belum di-update
+                // Dalam kasus ini, kita akan mengandalkan data yang sudah ada di form
+                // atau user harus mengisi manual
+              }
+            } catch (error) {
+              console.error('Error fetching latest order for fallback:', error)
+              // Continue dengan data yang sudah ada
+            }
+          }
+          
+          // Set form values
+          if (phoneNumber) {
+            form.setValue('phone_number', phoneNumber)
+          }
+          if (address) {
+            form.setValue('address', address)
+          }
         }
       } catch (error) {
         console.error('Error loading user data:', error)
@@ -104,7 +142,7 @@ export default function CheckoutPage() {
         setLoadingUser(false)
       }
     }
-    loadUser()
+    loadUserAndPrefill()
   }, [isAuthenticated, form])
 
   // Redirect jika belum login atau cart kosong
@@ -170,25 +208,12 @@ export default function CheckoutPage() {
       const order = await ordersApi.create(orderData)
 
       if (order) {
-        // Reload user data to get updated Client information
-        try {
-          const userData = await authApi.me()
-          if (userData) {
-            setUser(userData)
-            // Update form with latest Client data
-            const phoneNumber = userData.client?.phone_number || userData.phone_number || ''
-            const address = userData.client?.address || userData.address || ''
-            form.setValue('phone_number', phoneNumber)
-            form.setValue('address', address)
-          }
-        } catch (error) {
-          console.error('Error reloading user data:', error)
-          // Continue even if reload fails
-        }
-        
-        toast.success("Pesanan berhasil dibuat!")
+        // Clear cart first before redirect
         clearCart()
-        router.push(`/my-transactions`)
+        toast.success("Pesanan berhasil dibuat!")
+        
+        // Redirect immediately using replace to prevent back button returning to checkout
+        router.replace('/my-transactions')
       } else {
         toast.error("Gagal membuat pesanan. Silakan coba lagi.")
       }
