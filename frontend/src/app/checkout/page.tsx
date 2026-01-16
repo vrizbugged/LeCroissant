@@ -136,10 +136,29 @@ export default function CheckoutPage() {
       return
     }
 
+    // Validasi minimal quantity untuk setiap produk
+    const MIN_PURCHASE_QUANTITY = 10
+    const invalidItems = items.filter(item => item.quantity < MIN_PURCHASE_QUANTITY)
+    if (invalidItems.length > 0) {
+      toast.error(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit per produk`)
+      router.push("/cart")
+      return
+    }
+
+    // Validasi stok tersedia
+    const outOfStockItems = items.filter(item => item.quantity > item.product.ketersediaan_stok)
+    if (outOfStockItems.length > 0) {
+      toast.error(`Stok tidak mencukupi untuk beberapa produk`)
+      router.push("/cart")
+      return
+    }
+
     setLoading(true)
     try {
       // Prepare order data
       const orderData = {
+        phone_number: data.phone_number,
+        address: data.address,
         special_notes: data.special_notes || undefined,
         payment_proof: data.payment_proof instanceof File ? data.payment_proof : undefined,
         products: items.map((item) => ({
@@ -151,6 +170,22 @@ export default function CheckoutPage() {
       const order = await ordersApi.create(orderData)
 
       if (order) {
+        // Reload user data to get updated Client information
+        try {
+          const userData = await authApi.me()
+          if (userData) {
+            setUser(userData)
+            // Update form with latest Client data
+            const phoneNumber = userData.client?.phone_number || userData.phone_number || ''
+            const address = userData.client?.address || userData.address || ''
+            form.setValue('phone_number', phoneNumber)
+            form.setValue('address', address)
+          }
+        } catch (error) {
+          console.error('Error reloading user data:', error)
+          // Continue even if reload fails
+        }
+        
         toast.success("Pesanan berhasil dibuat!")
         clearCart()
         router.push(`/my-transactions`)
@@ -406,28 +441,36 @@ export default function CheckoutPage() {
                                   <div className="relative">
                                     <div className="border rounded-lg p-4 bg-muted/50">
                                       <div className="flex items-center gap-3">
-                                        {form.watch('payment_proof') instanceof File && 
-                                         form.watch('payment_proof').type.startsWith('image/') ? (
-                                          <img
-                                            src={paymentProofPreview}
-                                            alt="Preview bukti pembayaran"
-                                            className="w-20 h-20 object-cover rounded"
-                                          />
-                                        ) : (
-                                          <div className="w-20 h-20 flex items-center justify-center bg-muted rounded">
-                                            <span className="text-xs text-muted-foreground">PDF</span>
-                                          </div>
-                                        )}
+                                        {(() => {
+                                          const paymentProof = form.watch('payment_proof')
+                                          return paymentProof instanceof File && paymentProof.type.startsWith('image/') ? (
+                                            <img
+                                              src={paymentProofPreview}
+                                              alt="Preview bukti pembayaran"
+                                              className="w-20 h-20 object-cover rounded"
+                                            />
+                                          ) : (
+                                            <div className="w-20 h-20 flex items-center justify-center bg-muted rounded">
+                                              <span className="text-xs text-muted-foreground">PDF</span>
+                                            </div>
+                                          )
+                                        })()}
                                         <div className="flex-1 min-w-0">
                                           <p className="text-sm font-medium truncate">
-                                            {form.watch('payment_proof') instanceof File 
-                                              ? form.watch('payment_proof').name 
-                                              : 'File terpilih'}
+                                            {(() => {
+                                              const paymentProof = form.watch('payment_proof')
+                                              return paymentProof instanceof File 
+                                                ? paymentProof.name 
+                                                : 'File terpilih'
+                                            })()}
                                           </p>
                                           <p className="text-xs text-muted-foreground">
-                                            {form.watch('payment_proof') instanceof File 
-                                              ? `${(form.watch('payment_proof').size / 1024).toFixed(2)} KB`
-                                              : ''}
+                                            {(() => {
+                                              const paymentProof = form.watch('payment_proof')
+                                              return paymentProof instanceof File 
+                                                ? `${(paymentProof.size / 1024).toFixed(2)} KB`
+                                                : ''
+                                            })()}
                                           </p>
                                         </div>
                                         <Button
@@ -517,9 +560,9 @@ export default function CheckoutPage() {
                     {items.map((item) => (
                       <div key={item.product.id} className="flex gap-3 pb-3 border-b last:border-0">
                         <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
-                          {item.product.gambar_url ? (
+                          {item.product.image_url ? (
                             <Image
-                              src={item.product.gambar_url}
+                              src={item.product.image_url}
                               alt={item.product.nama_produk}
                               fill
                               className="object-cover"

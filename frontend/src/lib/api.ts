@@ -553,6 +553,10 @@ export const ordersApi = {
       // Handle FormData for file upload (payment_proof)
       const formData = new FormData()
       
+      // Add phone_number and address (required fields)
+      formData.append('phone_number', data.phone_number)
+      formData.append('address', data.address)
+      
       // Add products as array using bracket notation for Laravel
       data.products.forEach((product, index) => {
         formData.append(`products[${index}][id]`, product.id.toString())
