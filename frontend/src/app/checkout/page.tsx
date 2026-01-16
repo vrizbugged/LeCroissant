@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { ArrowLeftIcon, Loader2, MapPinIcon, PhoneIcon, UploadIcon, XIcon } from "lucide-react"
+import { ArrowLeftIcon, Loader2, MapPinIcon, PhoneIcon, UploadIcon, XIcon, Building2Icon, CopyIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -51,6 +51,13 @@ const checkoutFormSchema = z.object({
 })
 
 type CheckoutFormValues = z.infer<typeof checkoutFormSchema>
+
+// Informasi rekening bank untuk transfer
+const BANK_INFO = {
+  bankName: "Bank BCA",
+  accountNumber: "1234567890",
+  accountHolder: "PT Le Croissant",
+}
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -193,6 +200,21 @@ export default function CheckoutPage() {
     setPaymentProofPreview(null)
   }
 
+  // Format nomor rekening dengan spasi untuk kemudahan membaca
+  const formatAccountNumber = (accountNumber: string): string => {
+    return accountNumber.replace(/(.{4})/g, '$1 ').trim()
+  }
+
+  // Copy nomor rekening ke clipboard
+  const copyAccountNumber = async () => {
+    try {
+      await navigator.clipboard.writeText(BANK_INFO.accountNumber)
+      toast.success("Nomor rekening berhasil disalin!")
+    } catch (error) {
+      toast.error("Gagal menyalin nomor rekening")
+    }
+  }
+
   if (!isAuthenticated || items.length === 0) {
     return null // Will redirect
   }
@@ -246,7 +268,6 @@ export default function CheckoutPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <PhoneIcon className="h-5 w-5 text-orange-600" />
                         Informasi Kontak
                       </CardTitle>
                     </CardHeader>
@@ -328,11 +349,51 @@ export default function CheckoutPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <UploadIcon className="h-5 w-5 text-orange-600" />
                         Upload Bukti Pembayaran
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      {/* Informasi Rekening Bank */}
+                      <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 space-y-4">
+                        <div className="flex items-center gap-2">
+                          <Building2Icon className="h-5 w-5 text-orange-600" />
+                          <h3 className="font-semibold text-sm text-orange-900 dark:text-orange-100">
+                            Informasi Rekening Bank
+                          </h3>
+                        </div>
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center gap-4">
+                            <span className="text-muted-foreground min-w-[120px] font-medium">Bank</span>
+                            <span className="font-semibold text-foreground">{BANK_INFO.bankName}</span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-muted-foreground min-w-[120px] font-medium">Nomor Rekening</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-semibold text-orange-600 dark:text-orange-400">
+                                {formatAccountNumber(BANK_INFO.accountNumber)}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-orange-600 hover:text-orange-700 hover:bg-orange-100 dark:hover:bg-orange-900/30"
+                                onClick={copyAccountNumber}
+                                title="Salin nomor rekening"
+                              >
+                                <CopyIcon className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-muted-foreground min-w-[120px] font-medium">Atas Nama</span>
+                            <span className="font-semibold text-foreground">{BANK_INFO.accountHolder}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground pt-3 border-t border-orange-200 dark:border-orange-800">
+                          Silakan transfer sesuai dengan total pesanan ke rekening di atas, kemudian upload bukti pembayaran.
+                        </p>
+                      </div>
+
                       <FormField
                         control={form.control}
                         name="payment_proof"
