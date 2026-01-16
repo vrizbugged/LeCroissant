@@ -22,6 +22,8 @@ import type { ProductResource } from "@/types/api"
 import { useCart } from "@/contexts/cart-context"
 import { toast } from "sonner"
 
+const MIN_PURCHASE_QUANTITY = 10
+
 export default function ShopPage() {
   const { addItem, isAuthenticated } = useCart()
   const router = useRouter()
@@ -76,10 +78,15 @@ export default function ShopPage() {
   const handleQuantityChange = (productId: number, value: string) => {
     const numValue = parseInt(value) || 0
     if (numValue < 0) return
+    // Enforce minimal purchase quantity
+    const finalValue = numValue < MIN_PURCHASE_QUANTITY ? MIN_PURCHASE_QUANTITY : numValue
     setQuantities((prev) => ({
       ...prev,
-      [productId]: numValue,
+      [productId]: finalValue,
     }))
+    if (numValue > 0 && numValue < MIN_PURCHASE_QUANTITY) {
+      toast.warning(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit`)
+    }
   }
 
   // Handle add to cart
@@ -90,21 +97,34 @@ export default function ShopPage() {
       return
     }
 
-    const quantity = quantities[product.id] || 1
-    if (quantity <= 0) {
-      toast.error("Jumlah harus lebih dari 0")
-      return
+    let quantity = quantities[product.id] || MIN_PURCHASE_QUANTITY
+    
+    // Enforce minimal purchase quantity
+    if (quantity < MIN_PURCHASE_QUANTITY) {
+      quantity = MIN_PURCHASE_QUANTITY
+      setQuantities((prev) => ({
+        ...prev,
+        [product.id]: MIN_PURCHASE_QUANTITY,
+      }))
+      toast.warning(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit. Quantity diubah menjadi ${MIN_PURCHASE_QUANTITY}`)
     }
+    
     if (quantity > product.ketersediaan_stok) {
       toast.error(`Stok tersedia hanya ${product.ketersediaan_stok} unit`)
       return
     }
+    
+    if (product.ketersediaan_stok < MIN_PURCHASE_QUANTITY) {
+      toast.error(`Stok tidak mencukupi untuk minimal pembelian ${MIN_PURCHASE_QUANTITY} unit`)
+      return
+    }
+    
     addItem(product, quantity)
     toast.success(`${quantity}x ${product.nama_produk} ditambahkan ke keranjang`)
-    // Reset quantity input
+    // Reset quantity input to minimum
     setQuantities((prev) => ({
       ...prev,
-      [product.id]: 1,
+      [product.id]: MIN_PURCHASE_QUANTITY,
     }))
   }
 
@@ -275,9 +295,9 @@ export default function ShopPage() {
                       <Input
                         id={`qty-${product.id}`}
                         type="number"
-                        min="1"
+                        min={MIN_PURCHASE_QUANTITY}
                         max={product.ketersediaan_stok}
-                        value={quantities[product.id] || 1}
+                        value={quantities[product.id] || MIN_PURCHASE_QUANTITY}
                         onChange={(e) => handleQuantityChange(product.id, e.target.value)}
                         className="flex-1"
                       />

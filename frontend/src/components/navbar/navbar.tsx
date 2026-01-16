@@ -54,7 +54,8 @@ export function Navbar() {
       const savedCart = localStorage.getItem(cartKey)
       if (savedCart) {
         const cart = JSON.parse(savedCart)
-        return cart.reduce((total: number, item: any) => total + (item.quantity || 0), 0)
+        // Return jumlah produk yang berbeda, bukan total quantity
+        return cart.length || 0
       }
     } catch (error) {
       console.error("Error loading cart:", error)

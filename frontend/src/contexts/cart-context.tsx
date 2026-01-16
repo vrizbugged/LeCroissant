@@ -3,6 +3,8 @@
 import * as React from "react"
 import type { ProductResource } from "@/types/api"
 
+const MIN_PURCHASE_QUANTITY = 10
+
 export interface CartItem {
   product: ProductResource
   quantity: number
@@ -162,6 +164,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // Note: Authentication check should be done before calling this function
     // This function assumes user is already authenticated
     
+    // Enforce minimal purchase quantity
+    if (quantity < MIN_PURCHASE_QUANTITY) {
+      quantity = MIN_PURCHASE_QUANTITY
+    }
 
     setItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.product.id === product.id)
@@ -173,15 +179,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           alert(`Stok tersedia hanya ${product.ketersediaan_stok} unit`)
           return prevItems
         }
+        // Ensure new quantity meets minimum
+        const finalQuantity = newQuantity < MIN_PURCHASE_QUANTITY ? MIN_PURCHASE_QUANTITY : newQuantity
+        if (finalQuantity > product.ketersediaan_stok) {
+          alert(`Stok tersedia hanya ${product.ketersediaan_stok} unit`)
+          return prevItems
+        }
         return prevItems.map((item) =>
           item.product.id === product.id
-            ? { ...item, quantity: newQuantity }
+            ? { ...item, quantity: finalQuantity }
             : item
         )
       } else {
         // Add new item
         if (quantity > product.ketersediaan_stok) {
           alert(`Stok tersedia hanya ${product.ketersediaan_stok} unit`)
+          return prevItems
+        }
+        if (quantity < MIN_PURCHASE_QUANTITY) {
+          alert(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit`)
           return prevItems
         }
         return [...prevItems, { product, quantity }]
@@ -194,6 +210,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const updateQuantity = React.useCallback((productId: number, quantity: number) => {
+    // Enforce minimal purchase quantity - cannot go below minimum
+    if (quantity > 0 && quantity < MIN_PURCHASE_QUANTITY) {
+      quantity = MIN_PURCHASE_QUANTITY
+    }
+    
     if (quantity <= 0) {
       removeItem(productId)
       return
@@ -202,6 +223,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((prevItems) => {
       return prevItems.map((item) => {
         if (item.product.id === productId) {
+          // Enforce minimal purchase quantity
+          if (quantity < MIN_PURCHASE_QUANTITY) {
+            alert(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit`)
+            return item
+          }
           if (quantity > item.product.ketersediaan_stok) {
             alert(`Stok tersedia hanya ${item.product.ketersediaan_stok} unit`)
             return item

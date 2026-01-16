@@ -12,6 +12,8 @@ import { Navbar } from "@/components/navbar/navbar"
 import { useCart } from "@/contexts/cart-context"
 import { toast } from "sonner"
 
+const MIN_PURCHASE_QUANTITY = 10
+
 export default function CartPage() {
   const router = useRouter()
   const { items, removeItem, updateQuantity, clearCart, getTotalPrice, isAuthenticated } = useCart()
@@ -137,11 +139,30 @@ export default function CartPage() {
 
                               <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-2 border rounded-md">
-                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8" 
+                                    onClick={() => {
+                                      const newQuantity = item.quantity - 1
+                                      if (newQuantity < MIN_PURCHASE_QUANTITY) {
+                                        toast.warning(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit`)
+                                        return
+                                      }
+                                      updateQuantity(item.product.id, newQuantity)
+                                    }}
+                                    disabled={item.quantity <= MIN_PURCHASE_QUANTITY}
+                                  >
                                     <MinusIcon className="h-4 w-4" />
                                   </Button>
                                   <span className="w-12 text-center font-medium">{item.quantity}</span>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8" 
+                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                    disabled={item.quantity >= item.product.ketersediaan_stok}
+                                  >
                                     <PlusIcon className="h-4 w-4" />
                                   </Button>
                                 </div>

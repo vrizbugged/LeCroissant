@@ -193,21 +193,56 @@ export const authApi = {
    */
   register: async (data: AuthRegisterData): Promise<AuthResponse | null> => {
     try {
-      const response = await apiRequest<ApiResponse<AuthResponse>>('/register', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
-      if (!response) return null
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      }
+
+      let response: Response
+      try {
+        response = await fetch(`${API_BASE_URL}/register`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(data),
+          cache: 'no-store',
+        })
+      } catch (fetchError) {
+        // Network error (backend tidak berjalan, CORS, dll)
+        if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
+          throw new Error('Failed to fetch: Tidak dapat terhubung ke server. Pastikan backend berjalan di http://127.0.0.1:8000')
+        }
+        throw fetchError
+      }
+
+      if (!response.ok) {
+        let errorMessage = 'Gagal membuat akun'
+        try {
+          const error = await response.json()
+          errorMessage = error.message || errorMessage
+        } catch {
+          // Jika response bukan JSON, gunakan status text
+          errorMessage = response.statusText || `HTTP ${response.status}`
+        }
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
       
-      // Store token in localStorage
-      if (typeof window !== 'undefined' && response.data.token) {
-        localStorage.setItem('auth_token', response.data.token)
+      // Validasi response structure
+      if (!result.data || !result.data.token) {
+        throw new Error('Invalid response format from server')
       }
       
-      return response.data
+      // Store token in localStorage
+      if (typeof window !== 'undefined' && result.data.token) {
+        localStorage.setItem('auth_token', result.data.token)
+        localStorage.setItem('token', result.data.token) // Simpan juga di token untuk konsistensi
+      }
+      
+      return result.data
     } catch (error) {
-      console.error('Error registering:', error)
-      return null
+      // Re-throw error agar bisa ditangani di component dengan message yang jelas
+      throw error
     }
   },
 

@@ -61,15 +61,50 @@ export function SignupForm({
         password_confirmation: data.password_confirmation,
       })
 
-      if (result) {
-        toast.success("Akun berhasil dibuat!")
-        router.push("/login")
+      // authApi.register() sudah mengembalikan result.data yang berisi {user, token, token_type}
+      if (result && result.token) {
+        const token = result.token
+        const user = result.user
+
+        // Simpan ke LocalStorage (WAJIB AGAR NAVBAR BERUBAH)
+        localStorage.setItem("token", token)
+        localStorage.setItem("auth_token", token) // Simpan juga di auth_token untuk konsistensi
+        if (user) {
+          localStorage.setItem("user", JSON.stringify(user))
+        }
+
+        toast.success("Akun berhasil dibuat! Anda telah masuk secara otomatis.")
+
+        // Dispatch event untuk cart context agar cart di-reload
+        window.dispatchEvent(new Event("authChanged"))
+
+        // Redirect Berdasarkan Role
+        const userRole = user?.role
+        const hasAdminRole = user?.roles?.some((r: any) => 
+          r.name === 'Admin' || r.name === 'Super Admin'
+        )
+        
+        if (userRole === 'super_admin' || userRole === 'admin' || hasAdminRole) {
+          router.push("/dashboard") // Masuk ke dashboard admin/super admin
+        } else {
+          router.push("/") // Masuk ke homepage customer
+        }
+        
+        // Refresh agar komponen lain (seperti Navbar) tahu ada perubahan data
+        router.refresh()
       } else {
-        toast.error("Gagal membuat akun. Silakan coba lagi.")
+        // Jika register sukses tapi token tidak ditemukan di response
+        console.error("Token missing in response:", result)
+        toast.error("Terjadi kesalahan sistem: Token tidak ditemukan")
       }
     } catch (error) {
       console.error("Error registering:", error)
-      toast.error("Terjadi kesalahan saat mendaftar")
+      // Tampilkan error message yang lebih spesifik
+      if (error instanceof Error) {
+        toast.error(error.message || "Terjadi kesalahan saat mendaftar")
+      } else {
+        toast.error("Terjadi kesalahan saat mendaftar")
+      }
     } finally {
       setLoading(false)
     }
