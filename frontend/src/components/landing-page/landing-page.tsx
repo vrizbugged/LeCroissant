@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator"
 import { ArrowRight, CheckCircle2, Rocket, Shield, Zap, MapPin, Clock, Phone, Mail, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { Navbar } from "@/components/navbar/navbar"
+import { Footer } from "@/components/footer/footer"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
 export function LandingPage() {
@@ -341,6 +342,8 @@ export function LandingPage() {
           </ScrollReveal>
         </div>
       </section>
+
+      <Footer />
     </div>
   )
 }

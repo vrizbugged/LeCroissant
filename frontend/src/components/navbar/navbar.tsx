@@ -204,23 +204,27 @@ export function Navbar() {
                   Shop
                 </Button>
               </Link>
-              <span className="text-black/70 mx-1">·</span>
-              <Link href="/cart">
-                <Button variant="ghost" className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20 relative">
-                  <ShoppingCartIcon className="h-4 w-4 mr-1" />
-                  Cart
-                  {isLoggedIn && cartItemCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-orange-600 text-white border-none">
-                      {cartItemCount}
-                    </Badge>
-                  )}
-                </Button>
-              </Link>
             </div>
           </div>
 
-          {/* --- BAGIAN KANAN: User Dropdown --- */}
+          {/* --- BAGIAN KANAN: Cart & User Dropdown --- */}
           <div className="flex items-center gap-2 pr-4 md:pr-6">
+            {/* Cart Icon */}
+            <Link href="/cart">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm bg-white border-white/30 text-orange-600 hover:bg-white/90 hover:text-orange-700 shadow-sm relative"
+              >
+                <ShoppingCartIcon className="h-4 w-4" />
+                {isLoggedIn && cartItemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-orange-600 text-white border-none">
+                    {cartItemCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
