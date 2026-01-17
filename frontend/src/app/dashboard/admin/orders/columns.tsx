@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { MoreVertical } from "lucide-react"
 import { toast } from "sonner"
@@ -14,6 +15,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { ordersApi } from "@/lib/api"
 import type { OrderResource } from "@/types/api"
 
@@ -69,24 +80,64 @@ const getStatusBadge = (status: OrderResource["status"]) => {
   )
 }
 
-// Handle status update
-const handleStatusUpdate = async (
-  orderId: number,
-  newStatus: OrderResource["status"]
-) => {
-  try {
-    const result = await ordersApi.updateStatus(orderId, newStatus)
-    if (result) {
-      toast.success("Status order berhasil diperbarui")
-      // Refresh the table - you might want to pass a callback or use a state management solution
-      window.location.reload()
-    } else {
-      toast.error("Gagal memperbarui status order")
+// Component untuk cancel dialog
+function CancelOrderDialog({ 
+  open, 
+  onOpenChange, 
+  onConfirm 
+}: { 
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onConfirm: (reason: string) => void
+}) {
+  const [reason, setReason] = React.useState("")
+
+  const handleConfirm = () => {
+    if (!reason.trim()) {
+      toast.error("Alasan pembatalan wajib diisi")
+      return
     }
-  } catch (error) {
-    console.error("Error updating order status:", error)
-    toast.error("Terjadi kesalahan saat memperbarui status")
+    onConfirm(reason.trim())
+    setReason("")
+    onOpenChange(false)
   }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Batalkan Pesanan</DialogTitle>
+          <DialogDescription>
+            Masukkan alasan pembatalan pesanan. Alasan ini akan ditampilkan kepada customer.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="cancellation-reason">Alasan Pembatalan *</Label>
+            <Textarea
+              id="cancellation-reason"
+              placeholder="Contoh: Stok tidak mencukupi, masalah pembayaran, dll."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={4}
+              maxLength={500}
+            />
+            <p className="text-sm text-muted-foreground">
+              {reason.length}/500 karakter
+            </p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Batal
+          </Button>
+          <Button onClick={handleConfirm} variant="destructive">
+            Konfirmasi Pembatalan
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 export const columns: ColumnDef<OrderResource>[] = [
@@ -142,57 +193,93 @@ export const columns: ColumnDef<OrderResource>[] = [
     cell: ({ row }) => {
       const order = row.original
       const currentStatus = order.status
+      const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false)
+
+      const handleStatusUpdate = async (
+        orderId: number,
+        newStatus: OrderResource["status"],
+        cancellationReason?: string | null
+      ) => {
+        try {
+          const result = await ordersApi.updateStatus(orderId, newStatus, cancellationReason)
+          if (result) {
+            toast.success("Status order berhasil diperbarui")
+            window.location.reload()
+          } else {
+            toast.error("Gagal memperbarui status order")
+          }
+        } catch (error) {
+          console.error("Error updating order status:", error)
+          toast.error("Terjadi kesalahan saat memperbarui status")
+        }
+      }
+
+      const handleCancelClick = () => {
+        setCancelDialogOpen(true)
+      }
+
+      const handleCancelConfirm = (reason: string) => {
+        handleStatusUpdate(order.id, "dibatalkan", reason)
+      }
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Update Status</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {currentStatus !== "menunggu_konfirmasi" && (
-              <DropdownMenuItem
-                onClick={() =>
-                  handleStatusUpdate(order.id, "menunggu_konfirmasi")
-                }
-              >
-                Menunggu Konfirmasi
-              </DropdownMenuItem>
-            )}
-            {currentStatus !== "diproses" && (
-              <DropdownMenuItem
-                onClick={() => handleStatusUpdate(order.id, "diproses")}
-              >
-                Diproses
-              </DropdownMenuItem>
-            )}
-            {currentStatus !== "siap_di_pickup" && (
-              <DropdownMenuItem
-                onClick={() => handleStatusUpdate(order.id, "siap_di_pickup")}
-              >
-                Siap Di-Pickup
-              </DropdownMenuItem>
-            )}
-            {currentStatus !== "selesai" && (
-              <DropdownMenuItem
-                onClick={() => handleStatusUpdate(order.id, "selesai")}
-              >
-                Selesai
-              </DropdownMenuItem>
-            )}
-            {currentStatus !== "dibatalkan" && (
-              <DropdownMenuItem
-                onClick={() => handleStatusUpdate(order.id, "dibatalkan")}
-              >
-                Dibatalkan
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Update Status</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {currentStatus !== "menunggu_konfirmasi" && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleStatusUpdate(order.id, "menunggu_konfirmasi")
+                  }
+                >
+                  Menunggu Konfirmasi
+                </DropdownMenuItem>
+              )}
+              {currentStatus !== "diproses" && (
+                <DropdownMenuItem
+                  onClick={() => handleStatusUpdate(order.id, "diproses")}
+                >
+                  Diproses
+                </DropdownMenuItem>
+              )}
+              {currentStatus !== "siap_di_pickup" && (
+                <DropdownMenuItem
+                  onClick={() => handleStatusUpdate(order.id, "siap_di_pickup")}
+                >
+                  Siap Di-Pickup
+                </DropdownMenuItem>
+              )}
+              {currentStatus !== "selesai" && (
+                <DropdownMenuItem
+                  onClick={() => handleStatusUpdate(order.id, "selesai")}
+                >
+                  Selesai
+                </DropdownMenuItem>
+              )}
+              {currentStatus !== "dibatalkan" && (
+                <DropdownMenuItem
+                  onClick={handleCancelClick}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  Dibatalkan
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <CancelOrderDialog
+            open={cancelDialogOpen}
+            onOpenChange={setCancelDialogOpen}
+            onConfirm={handleCancelConfirm}
+          />
+        </>
       )
     },
   },

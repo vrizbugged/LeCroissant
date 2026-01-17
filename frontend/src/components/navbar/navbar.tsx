@@ -13,9 +13,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, LogIn, ShoppingCartIcon, ShoppingBasket, House, User, Receipt, UserPlus } from "lucide-react"
-import { authApi } from "@/lib/api"
-import type { UserResource } from "@/types/api"
+import { LogOut, LogIn, ShoppingCartIcon, ShoppingBasket, House, User, Receipt, UserPlus, Bell } from "lucide-react"
+import { authApi, ordersApi } from "@/lib/api"
+import type { UserResource, OrderResource } from "@/types/api"
 
 export function Navbar() {
   const router = useRouter()
@@ -23,6 +23,8 @@ export function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false)
   const [cartItemCount, setCartItemCount] = React.useState(0)
   const [userData, setUserData] = React.useState<UserResource | null>(null)
+  const [hasNewOrderUpdate, setHasNewOrderUpdate] = React.useState(false)
+  const [latestOrderStatus, setLatestOrderStatus] = React.useState<OrderResource['status'] | null>(null)
 
   // Get cart items count based on user authentication
   const getCartCount = () => {
@@ -130,6 +132,51 @@ export function Navbar() {
     }
   }, [])
 
+  // Check for order status updates
+  React.useEffect(() => {
+    const checkOrderUpdates = async () => {
+      if (!isLoggedIn) {
+        setHasNewOrderUpdate(false)
+        setLatestOrderStatus(null)
+        return
+      }
+
+      try {
+        const response = await ordersApi.getMyOrders({ per_page: 1 })
+        if (response && response.data && response.data.length > 0) {
+          const latestOrder = response.data[0]
+          const storedStatus = localStorage.getItem('lastOrderStatus')
+          
+          if (storedStatus && storedStatus !== latestOrder.status) {
+            setHasNewOrderUpdate(true)
+            // Dispatch event untuk landing page
+            window.dispatchEvent(new CustomEvent('orderStatusUpdated', { 
+              detail: { order: latestOrder } 
+            }))
+          }
+          
+          setLatestOrderStatus(latestOrder.status)
+          localStorage.setItem('lastOrderStatus', latestOrder.status)
+        }
+      } catch (error) {
+        console.error("Error checking order updates:", error)
+      }
+    }
+
+    // Check immediately
+    checkOrderUpdates()
+
+    // Poll every 30 seconds
+    const interval = setInterval(checkOrderUpdates, 30000)
+
+    return () => clearInterval(interval)
+  }, [isLoggedIn])
+
+  // Clear notification when user clicks
+  const handleUserMenuClick = () => {
+    setHasNewOrderUpdate(false)
+  }
+
   // Efek ini jalan otomatis saat halaman dimuat
   React.useEffect(() => {
     const checkAuth = () => {
@@ -230,13 +277,17 @@ export function Navbar() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-sm bg-white border-white/30 text-orange-600 hover:bg-white/90 hover:text-orange-700 shadow-sm gap-2"
+                  className="text-sm bg-white border-white/30 text-orange-600 hover:bg-white/90 hover:text-orange-700 shadow-sm gap-2 relative"
+                  onClick={handleUserMenuClick}
                 >
                   <User className="h-4 w-4" />
                   {isLoggedIn && userData?.name && (
                     <span className="hidden sm:inline-block max-w-[120px] truncate">
                       {userData.name}
                     </span>
+                  )}
+                  {hasNewOrderUpdate && (
+                    <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
                   )}
                 </Button>
               </DropdownMenuTrigger>

@@ -656,11 +656,15 @@ export const ordersApi = {
    * Update order status (Admin only - requires permission)
    * Shortcut endpoint for updating only the status
    */
-  updateStatus: async (id: number, status: OrderStatusUpdate['status']): Promise<OrderResource | null> => {
+  updateStatus: async (id: number, status: OrderStatusUpdate['status'], cancellationReason?: string | null): Promise<OrderResource | null> => {
     try {
+      const body: OrderStatusUpdate = { status }
+      if (status === 'dibatalkan' && cancellationReason) {
+        body.cancellation_reason = cancellationReason
+      }
       const response = await apiRequest<ApiResponse<OrderResource>>(`/orders/${id}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(body),
       })
       if (!response) return null
       return response.data

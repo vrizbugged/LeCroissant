@@ -121,21 +121,17 @@ export default function MyTransactionsPage() {
 
   // Real-time polling untuk update status order terbaru
   React.useEffect(() => {
+    // 1. Cek mode development
+    const isDev = process.env.NODE_ENV === 'development';
+    if (isDev) return; 
     if (orders.length === 0) return
 
-    const latestOrder = orders[0]
-    // Hanya poll jika order belum selesai atau dibatalkan
-    if (latestOrder.status === 'selesai' || latestOrder.status === 'dibatalkan') {
-      return
-    }
-
     const interval = setInterval(() => {
-      fetchMyOrders(true) // Silent fetch untuk polling
-    }, 5000) // Poll setiap 5 detik
+      fetchMyOrders(true)
+    }, 5000) // Poll 5 detik (hanya aktif di Production)
 
     return () => clearInterval(interval)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orders.length]) // Only depend on orders.length to avoid infinite loop
+  }, [orders.length])// Only depend on orders.length to avoid infinite loop
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -331,15 +327,44 @@ export default function MyTransactionsPage() {
                     </div>
                   </div>
 
-                  {/* Button Cetak Invoice */}
+                  {/* Cancellation Reason - jika dibatalkan */}
+                  {latestOrder.status === 'dibatalkan' && latestOrder.cancellation_reason && (
+                    <div className="pt-4 border-t">
+                      <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg p-4">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-red-900 dark:text-red-400 mb-1">
+                              Alasan Pembatalan
+                            </h4>
+                            <p className="text-sm text-red-800 dark:text-red-300">
+                              {latestOrder.cancellation_reason}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Button Cetak Invoice - disable jika dibatalkan */}
                   <div className="pt-4 border-t">
-                    <Button
-                      onClick={() => handleOpenInvoice(latestOrder)}
-                      className="bg-orange-600 hover:bg-orange-700 text-white"
-                    >
-                      <Printer className="h-4 w-4 mr-2" />
-                      Cetak Invoice
-                    </Button>
+                    {latestOrder.status === 'dibatalkan' ? (
+                      <Button
+                        disabled
+                        className="bg-gray-400 text-white cursor-not-allowed"
+                      >
+                        <Printer className="h-4 w-4 mr-2" />
+                        Invoice Tidak Dapat Dicetak
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleOpenInvoice(latestOrder)}
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                      >
+                        <Printer className="h-4 w-4 mr-2" />
+                        Cetak Invoice
+                      </Button>
+                    )}
                   </div>
 
                   {/* Detail Produk Pesanan Terbaru - Collapsible */}
@@ -495,6 +520,23 @@ export default function MyTransactionsPage() {
                           </div>
                         )}
 
+                        {/* Cancellation Reason - jika dibatalkan */}
+                        {order.status === 'dibatalkan' && order.cancellation_reason && (
+                          <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg p-4">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-red-900 dark:text-red-400 mb-1">
+                                  Alasan Pembatalan
+                                </h4>
+                                <p className="text-sm text-red-800 dark:text-red-300">
+                                  {order.cancellation_reason}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Special Notes - Collapsible */}
                         {order.special_notes && isOrderExpanded(order.id) && (
                           <div className="bg-muted/50 p-3 rounded-lg">
@@ -503,16 +545,27 @@ export default function MyTransactionsPage() {
                           </div>
                         )}
 
-                        {/* Button Cetak Invoice */}
+                        {/* Button Cetak Invoice - disable jika dibatalkan */}
                         <div className="pt-4 border-t">
-                          <Button
-                            onClick={() => handleOpenInvoice(order)}
-                            variant="outline"
-                            className="w-full sm:w-auto"
-                          >
-                            <Printer className="h-4 w-4 mr-2" />
-                            Cetak Invoice
-                          </Button>
+                          {order.status === 'dibatalkan' ? (
+                            <Button
+                              disabled
+                              variant="outline"
+                              className="w-full sm:w-auto bg-gray-400 text-white cursor-not-allowed"
+                            >
+                              <Printer className="h-4 w-4 mr-2" />
+                              Invoice Tidak Dapat Dicetak
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => handleOpenInvoice(order)}
+                              variant="outline"
+                              className="w-full sm:w-auto"
+                            >
+                              <Printer className="h-4 w-4 mr-2" />
+                              Cetak Invoice
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardContent>

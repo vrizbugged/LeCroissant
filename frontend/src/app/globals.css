@@ -107,6 +107,56 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
 }
+@media print {
+  /* 1. Sembunyikan SEMUA elemen website (Navbar, Sidebar, Background) */
+  body * {
+    visibility: hidden;
+  }
+
+  /* 2. Tampilkan HANYA konten invoice */
+  /* Class .invoice-content harus ada di wrapper invoice Anda */
+  .invoice-content,
+  .invoice-content * {
+    visibility: visible;
+  }
+
+  /* 3. POSISI SAKTI: Paksa konten pindah ke pojok kiri atas kertas */
+  .invoice-content {
+    position: fixed !important;   /* Lepas dari container Modal */
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;      /* Pakai lebar penuh kertas */
+    height: 100vh !important;     /* Pakai tinggi penuh kertas */
+    margin: 0 !important;
+    padding: 20px !important;     /* Beri jarak aman dari pinggir kertas */
+    background-color: white !important;
+    z-index: 9999 !important;
+    
+    /* PENTING: Matikan efek centering bawaan Modal (Dialog) */
+    transform: none !important; 
+    inset: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* 4. Reset margin halaman browser */
+  @page {
+    size: auto;
+    margin: 0mm;
+  }
+
+  /* 5. Utility untuk menyembunyikan tombol saat print */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* 6. Hilangkan scrollbar browser */
+  html, body {
+    height: 100vh;
+    overflow: hidden;
+  }
+}
 
 /* @layer and @apply are Tailwind CSS directives */
 @layer base {

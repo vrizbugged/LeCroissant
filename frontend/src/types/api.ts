@@ -36,6 +36,7 @@ export interface OrderResource {
   user_id?: number // Deprecated, use client instead
   delivery_date: string
   status: 'menunggu_konfirmasi' | 'diproses' | 'siap_di_pickup' | 'selesai' | 'dibatalkan'
+  cancellation_reason?: string | null // Alasan pembatalan pesanan
   total_price: number
   special_notes?: string | null
   created_at: string
@@ -154,6 +155,7 @@ export interface OrderUpdateData {
 // Order Status Update
 export interface OrderStatusUpdate {
   status: 'menunggu_konfirmasi' | 'diproses' | 'siap_di_pickup' | 'selesai' | 'dibatalkan'
+  cancellation_reason?: string | null // Required if status is 'dibatalkan'
 }
 
 // Order List Query Parameters

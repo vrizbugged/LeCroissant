@@ -22,6 +22,16 @@ import {
 } from "@/components/ui/table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 
 const statusColors: Record<OrderResource['status'], string> = {
@@ -55,10 +65,19 @@ interface OrderManagementProps {
 export function OrderManagement({ initialOrders }: OrderManagementProps) {
   const router = useRouter()
   const [orders, setOrders] = React.useState<OrderResource[]>(initialOrders || [])
+  const [cancelDialog, setCancelDialog] = React.useState<{
+    open: boolean
+    orderId: number | null
+  }>({ open: false, orderId: null })
+  const [cancellationReason, setCancellationReason] = React.useState("")
 
-  const handleStatusChange = async (orderId: number, newStatus: OrderResource['status']) => {
+  const handleStatusChange = async (
+    orderId: number, 
+    newStatus: OrderResource['status'],
+    cancellationReason?: string | null
+  ) => {
     try {
-      const updated = await ordersApi.updateStatus(orderId, newStatus)
+      const updated = await ordersApi.updateStatus(orderId, newStatus, cancellationReason)
       if (updated) {
         setOrders(orders.map(o => o.id === orderId ? updated : o))
         toast.success("Status pesanan berhasil diperbarui")
@@ -70,6 +89,29 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
       toast.error("Terjadi kesalahan")
       console.error(error)
     }
+  }
+
+  const handleSelectChange = (orderId: number, newStatus: OrderResource['status']) => {
+    // Jika status yang dipilih adalah "dibatalkan", buka dialog
+    if (newStatus === 'dibatalkan') {
+      setCancelDialog({ open: true, orderId })
+    } else {
+      // Untuk status lain, langsung update
+      handleStatusChange(orderId, newStatus)
+    }
+  }
+
+  const handleCancelConfirm = () => {
+    if (!cancelDialog.orderId) return
+    
+    if (!cancellationReason.trim()) {
+      toast.error("Alasan pembatalan wajib diisi")
+      return
+    }
+
+    handleStatusChange(cancelDialog.orderId, 'dibatalkan', cancellationReason.trim())
+    setCancelDialog({ open: false, orderId: null })
+    setCancellationReason("")
   }
 
   const formatCurrency = (value: number) => {
@@ -144,7 +186,7 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
                         <Select
                           value={order.status}
                           onValueChange={(value) =>
-                            handleStatusChange(order.id, value as OrderResource['status'])
+                            handleSelectChange(order.id, value as OrderResource['status'])
                           }
                         >
                           <SelectTrigger className="w-[140px]">
@@ -167,6 +209,56 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialog untuk input alasan pembatalan */}
+      <Dialog 
+        open={cancelDialog.open} 
+        onOpenChange={(open) => {
+          setCancelDialog({ open, orderId: cancelDialog.orderId })
+          if (!open) {
+            setCancellationReason("")
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Batalkan Pesanan</DialogTitle>
+            <DialogDescription>
+              Masukkan alasan pembatalan pesanan. Alasan ini akan ditampilkan kepada customer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="cancellation-reason">Alasan Pembatalan *</Label>
+              <Textarea
+                id="cancellation-reason"
+                placeholder="Contoh: Stok tidak mencukupi, masalah pembayaran, dll."
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                rows={4}
+                maxLength={500}
+              />
+              <p className="text-sm text-muted-foreground">
+                {cancellationReason.length}/500 karakter
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setCancelDialog({ open: false, orderId: null })
+                setCancellationReason("")
+              }}
+            >
+              Batal
+            </Button>
+            <Button onClick={handleCancelConfirm} variant="destructive">
+              Konfirmasi Pembatalan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
