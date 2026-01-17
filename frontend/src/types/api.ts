@@ -209,7 +209,6 @@ export interface ClientResource {
   phone_number?: string | null
   company_name?: string | null
   business_sector?: string | null
-  citizenship?: string | null
   address?: string | null
   status?: string // Pending, Aktif, Non Aktif
   total_orders_count?: number
@@ -224,7 +223,6 @@ export interface ClientFormData {
   phone_number?: string
   company_name?: string
   business_sector?: string
-  citizenship?: string
   address?: string
   status?: string
 }
@@ -236,7 +234,6 @@ export interface ClientUpdateData {
   phone_number?: string | null
   company_name?: string | null
   business_sector?: string | null
-  citizenship?: string | null
   address?: string | null
   status?: string
 }
@@ -244,7 +241,6 @@ export interface ClientUpdateData {
 // Client List Query Parameters
 export interface ClientListParams {
   sector?: string
-  citizenship?: string
 }
 
 // Client Market Analysis Data
@@ -255,7 +251,6 @@ export interface ClientMarketAnalysisData {
   }
   segments: Array<{
     sector?: string
-    citizenship?: string
     total_clients: number
     total_orders: number
     total_revenue: number

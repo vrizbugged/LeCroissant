@@ -813,7 +813,6 @@ export const clientsApi = {
     try {
       const queryParams = new URLSearchParams()
       if (params?.sector) queryParams.append('sector', params.sector)
-      if (params?.citizenship) queryParams.append('citizenship', params.citizenship)
 
       const queryString = queryParams.toString()
       const endpoint = `/clients${queryString ? `?${queryString}` : ''}`

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { CheckCircle2Icon, PencilIcon, PlusIcon, TrashIcon, MoreVertical, ChevronDown, ChevronRight, Phone, MapPin, Globe, Calendar1, CalendarArrowUp } from "lucide-react"
+import { CheckCircle2Icon, PencilIcon, PlusIcon, TrashIcon, MoreVertical, ChevronDown, ChevronRight, Phone, MapPin, Calendar1, CalendarArrowUp } from "lucide-react"
 
 import type { ClientResource, ClientFormData } from "@/types/api"
 import { clientsApi } from "@/lib/api"
@@ -64,7 +64,6 @@ const clientFormSchema = z.object({
   phone_number: z.string().optional(),
   company_name: z.string().optional(),
   business_sector: z.string().optional(),
-  citizenship: z.string().optional(),
   address: z.string().optional(),
   // Field status WAJIB ada agar lolos validasi dan dikirim ke backend
   status: z.string().min(1, "Status wajib dipilih"), 
@@ -89,7 +88,6 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
       phone_number: "",
       company_name: "",
       business_sector: "",
-      citizenship: "",
       address: "",
       status: "Pending", // Default value untuk klien baru
     },
@@ -103,7 +101,6 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
         phone_number: editingClient.phone_number || "",
         company_name: editingClient.company_name || "",
         business_sector: editingClient.business_sector || "",
-        citizenship: editingClient.citizenship || "",
         address: editingClient.address || "",
         status: editingClient.status || "Pending",
       })
@@ -114,7 +111,6 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
         phone_number: "",
         company_name: "",
         business_sector: "",
-        citizenship: "",
         address: "",
         status: "Pending",
       })
@@ -320,36 +316,20 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                         </FormItem>
                       )}
                     />
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="business_sector"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sektor Bisnis</FormLabel>
-                            <FormControl>
-                                {/* Bisa diganti Select jika mau fix option */}
-                                <Input placeholder="Hotel, Restoran, dll" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="citizenship"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Kewarganegaraan</FormLabel>
-                            <FormControl>
-                                {/* Bisa diganti Select jika mau fix option (WNI/WNA) */}
-                                <Input placeholder="WNI / WNA" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="business_sector"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sektor Bisnis</FormLabel>
+                          <FormControl>
+                              {/* Bisa diganti Select jika mau fix option */}
+                              <Input placeholder="Hotel, Restoran, dll" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="address"
@@ -521,21 +501,6 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                                       <p className="font-semibold text-sm mb-0.5">Alamat</p>
                                       <p className="text-sm text-muted-foreground">
                                         {client.address}
-                                      </p>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Kewarganegaraan */}
-                                {client.citizenship && (
-                                  <div className="flex items-start gap-3">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white-500/10 flex-shrink-0 mt-0.5">
-                                      <Globe className="h-4 w-4 text-gray-600" />
-                                    </div>
-                                    <div className="flex-1">
-                                      <p className="font-semibold text-sm mb-0.5">Kewarganegaraan</p>
-                                      <p className="text-sm text-muted-foreground">
-                                        {client.citizenship}
                                       </p>
                                     </div>
                                   </div>
