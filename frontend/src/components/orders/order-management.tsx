@@ -43,11 +43,11 @@ const statusColors: Record<OrderResource['status'], string> = {
 }
 
 const statusLabels: Record<OrderResource['status'], string> = {
-  menunggu_konfirmasi: 'Menunggu Konfirmasi',
-  diproses: 'Diproses',
-  siap_di_pickup: 'Siap Di-Pickup',
-  selesai: 'Selesai',
-  dibatalkan: 'Dibatalkan',
+  menunggu_konfirmasi: 'Pending',
+  diproses: 'Processing',
+  siap_di_pickup: 'Ready to Pick-Up',
+  selesai: 'Done',
+  dibatalkan: 'Cancelled',
 }
 
 const statusOptions: OrderResource['status'][] = [
@@ -62,7 +62,7 @@ interface OrderManagementProps {
   initialOrders: OrderResource[]
 }
 
-type SortField = 'status' | 'date' | null
+type SortField = 'status' | 'date' | OrderResource['status'] | null
 type SortDirection = 'asc' | 'desc'
 
 export function OrderManagement({ initialOrders }: OrderManagementProps) {
@@ -70,6 +70,7 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
   const [orders, setOrders] = React.useState<OrderResource[]>(initialOrders || [])
   const [sortField, setSortField] = React.useState<SortField>(null)
   const [sortDirection, setSortDirection] = React.useState<SortDirection>('desc')
+  const [statusFilter, setStatusFilter] = React.useState<OrderResource['status'] | null>(null)
   const [cancelDialog, setCancelDialog] = React.useState<{
     open: boolean
     orderId: number | null
@@ -191,9 +192,16 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
   }, [orders])
 
 
-  // Sort orders
+  // Sort and filter orders
   const sortedOrders = React.useMemo(() => {
-    const sorted = [...orders]
+    let filtered = [...orders]
+    
+    // Filter by specific status if selected
+    if (statusFilter) {
+      filtered = filtered.filter(order => order.status === statusFilter)
+    }
+    
+    // Sort orders
     if (sortField === 'status') {
       const statusOrder: Record<OrderResource['status'], number> = {
         menunggu_konfirmasi: 1,
@@ -202,20 +210,21 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
         selesai: 4,
         dibatalkan: 5,
       }
-      sorted.sort((a, b) => {
+      filtered.sort((a, b) => {
         const comparison = statusOrder[a.status] - statusOrder[b.status]
         return sortDirection === 'asc' ? comparison : -comparison
       })
     } else if (sortField === 'date') {
-      sorted.sort((a, b) => {
+      filtered.sort((a, b) => {
         const dateA = new Date(a.delivery_date).getTime()
         const dateB = new Date(b.delivery_date).getTime()
         const comparison = dateA - dateB
         return sortDirection === 'asc' ? comparison : -comparison
       })
     }
-    return sorted
-  }, [orders, sortField, sortDirection])
+    
+    return filtered
+  }, [orders, sortField, sortDirection, statusFilter])
 
   return (
     <div className="px-4 lg:px-6">
@@ -223,34 +232,48 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Manajemen Pesanan</CardTitle>
-              <CardDescription>Verifikasi dan kelola pesanan B2B</CardDescription>
+              <CardTitle>Order Management</CardTitle>
+              <CardDescription>Manage B2B Orders</CardDescription>
             </div>
             <div className="flex items-center gap-2"> 
               <Select
-                value={sortField ? `${sortField}-${sortDirection}` : ""}
+                value={
+                  statusFilter 
+                    ? statusFilter 
+                    : sortField 
+                      ? `${sortField}-${sortDirection}` 
+                      : "none"
+                }
                 onValueChange={(value) => {
                   if (value === 'none') {
                     setSortField(null)
+                    setStatusFilter(null)
                   } else if (value === 'date-asc' || value === 'date-desc') {
                     setSortField('date')
                     setSortDirection(value === 'date-asc' ? 'asc' : 'desc')
-                  } else if (value === 'status-asc' || value === 'status-desc') {
-                    setSortField('status')
-                    setSortDirection(value === 'status-asc' ? 'asc' : 'desc')
+                    setStatusFilter(null)
+
+                  } else if (statusOptions.includes(value as OrderResource['status'])) {
+                    // Filter by specific status
+                    setStatusFilter(value as OrderResource['status'])
+                    setSortField(null)
                   }
                 }}
               >
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-[220px]">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
-                
+
                 <SelectContent>
                   <SelectItem value="none">Sort By</SelectItem>
                   <SelectItem value="date-asc">Date (ascending)</SelectItem>
                   <SelectItem value="date-desc">Date (descending)</SelectItem>
-                  <SelectItem value="status-asc">Status (ascending)</SelectItem>
-                  <SelectItem value="status-desc">Status (descending)</SelectItem>
+
+                  <SelectItem value="menunggu_konfirmasi">Sort by Pending</SelectItem>
+                  <SelectItem value="diproses">Sort by Processing</SelectItem>
+                  <SelectItem value="siap_di_pickup">Sort by Ready to Pickup</SelectItem>
+                  <SelectItem value="selesai">Sort by Done</SelectItem>
+                  <SelectItem value="dibatalkan">Sort by Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -262,18 +285,23 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Order ID</TableHead>
-                  <TableHead>Klien</TableHead>
-                  <TableHead>Tanggal</TableHead>
-                  <TableHead>Total Harga</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Total Price</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.length === 0 ? (
+                {sortedOrders.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Belum ada pesanan
+                      {statusFilter 
+                        ? `Tidak ada pesanan dengan status "${statusLabels[statusFilter]}"`
+                        : orders.length === 0
+                          ? "Belum ada pesanan"
+                          : "Tidak ada pesanan yang sesuai filter"
+                      }
                     </TableCell>
                   </TableRow>
                 ) : (

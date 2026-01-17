@@ -60,7 +60,7 @@ const productFormSchema = z.object({
     z.string().url("URL gambar tidak valid"),
     z.literal("")
   ]).optional(),
-  status: z.enum(["Aktif", "Non Aktif"]).optional(),
+  status: z.enum(["Active", "Inactive"]).optional(),
 })
 
 interface ProductManagementProps {
@@ -82,7 +82,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
       harga_grosir: 0,
       ketersediaan_stok: 0,
       gambar: "",
-      status: "Aktif",
+      status: "Active",
     },
   })
 
@@ -90,13 +90,23 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
     if (editingProduct) {
       const imageUrl = editingProduct.gambar_url || ""
       setOriginalImageUrl(imageUrl)
+      
+      // Map backend status (Aktif/Non Aktif) to frontend format (Active/Inactive)
+      const statusMap: Record<string, "Active" | "Inactive"> = {
+        'Aktif': 'Active',
+        'Non Aktif': 'Inactive',
+        'Active': 'Active',
+        'Inactive': 'Inactive',
+      }
+      const mappedStatus = statusMap[editingProduct.status || 'Aktif'] || 'Active'
+      
       form.reset({
         nama_produk: editingProduct.nama_produk || "",
         deskripsi: editingProduct.deskripsi || "",
         harga_grosir: editingProduct.harga_grosir || 0,
         ketersediaan_stok: editingProduct.ketersediaan_stok || 0,
         gambar: imageUrl,
-        status: (editingProduct.status as "Aktif" | "Non Aktif") || "Aktif",
+        status: mappedStatus,
       })
     } else {
       setOriginalImageUrl(null)
@@ -106,7 +116,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
         harga_grosir: 0,
         ketersediaan_stok: 0,
         gambar: "",
-        status: "Aktif",
+        status: "Active",
       })
     }
   }, [editingProduct, form])
@@ -154,18 +164,18 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
           setOriginalImageUrl(null)
           router.refresh()
         } else {
-          toast.error("Gagal menambahkan produk")
+          toast.error("Failed to add product")
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan"
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong"
       toast.error(errorMessage)
       console.error("Error submitting product:", error)
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus produk ini?")) {
+    if (!confirm("Are you sure you want to delete this product?")) {
       return
     }
 
@@ -173,13 +183,13 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
       const success = await productsApi.delete(id)
       if (success) {
         setProducts(products.filter(p => p.id !== id))
-        toast.success("Produk berhasil dihapus")
+        toast.success("Product deleted successfully")
         router.refresh()
       } else {
-        toast.error("Gagal menghapus produk")
+        toast.error("Failed to delete product")
       }
     } catch (error) {
-      toast.error("Terjadi kesalahan")
+      toast.error("Something went wrong")
       console.error(error)
     }
   }
@@ -205,18 +215,27 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
   const getStatusBadge = (status?: string) => {
     if (!status) return null
     
-    const statusConfig: Record<string, { label: string; className: string }> = {
-      Aktif: {
-        label: "Aktif",
+    // Map backend status to frontend display format
+    const statusMap: Record<string, { label: string; className: string }> = {
+      'Active': {
+        label: "Active",
         className: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
       },
-      "Non Aktif": {
-        label: "Non Aktif",
+      'Inactive': {
+        label: "Inactive",
+        className: "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
+      },
+      'Aktif': {
+        label: "Active",
+        className: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
+      },
+      'Non Aktif': {
+        label: "Inactive",
         className: "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
       },
     }
 
-    const config = statusConfig[status] || {
+    const config = statusMap[status] || {
       label: status,
       className: "bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800",
     }
@@ -251,8 +270,8 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                   </DialogTitle>
                   <DialogDescription>
                     {editingProduct
-                      ? "Perbarui informasi produk"
-                      : "Tambahkan produk baru ke katalog"}
+                      ? "Update product information"
+                      : "Add new product to catalog"}
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -467,8 +486,8 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Aktif">Aktif</SelectItem>
-                              <SelectItem value="Non Aktif">Non Aktif</SelectItem>
+                              <SelectItem value="Active">Active</SelectItem>
+                              <SelectItem value="Inactive">Inactive</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

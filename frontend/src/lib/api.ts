@@ -127,6 +127,17 @@ export const dashboardApi = {
       return []
     }
   },
+
+  getChartData: async (): Promise<{ months: string[]; revenue: number[]; orders: number[] } | null> => {
+    try {
+      const response = await apiRequest<ApiResponse<{ months: string[]; revenue: number[]; orders: number[] }>>('/dashboard/chart-data')
+      if (!response) return null
+      return response.data
+    } catch (error) {
+      console.error('Error fetching chart data:', error)
+      return null
+    }
+  },
 }
 
 // Auth API
@@ -340,7 +351,15 @@ export const productsApi = {
         formData.append('gambar', data.gambar)
       }
       // Status is required by backend, always send it
-      formData.append('status', data.status || 'Aktif')
+      // Map English status to Indonesian format expected by backend
+      const statusMap: Record<string, string> = {
+        'Active': 'Aktif',
+        'Inactive': 'Non Aktif',
+        'Aktif': 'Aktif',
+        'Non Aktif': 'Non Aktif',
+      }
+      const mappedStatus = statusMap[data.status || 'Active'] || 'Aktif'
+      formData.append('status', mappedStatus)
 
       const token = typeof window !== 'undefined' ? getAuthToken() : null
       const headers: HeadersInit = {
@@ -417,7 +436,17 @@ export const productsApi = {
         // formData.append('gambar', data.gambar) // Optional: biasanya tidak perlu kirim string URL balik
       }
       // Status is required by backend, always send it
-      if (data.status) formData.append('status', data.status)
+      // Map English status to Indonesian format expected by backend
+      if (data.status) {
+        const statusMap: Record<string, string> = {
+          'Active': 'Aktif',
+          'Inactive': 'Non Aktif',
+          'Aktif': 'Aktif',
+          'Non Aktif': 'Non Aktif',
+        }
+        const mappedStatus = statusMap[data.status] || data.status
+        formData.append('status', mappedStatus)
+      }
 
       const token = typeof window !== 'undefined' ? getAuthToken() : null
       const headers: HeadersInit = {
@@ -995,6 +1024,43 @@ export const activityLogsApi = {
     } catch (error) {
       console.error('Error exporting activity logs:', error)
       return null
+    }
+  },
+
+  /**
+   * Clear all activity logs (Hidden feature - Super Admin only)
+   */
+  clear: async (): Promise<{ success: boolean; message: string; deleted_count?: number } | null> => {
+    try {
+      const response = await apiRequest<{
+        success: boolean
+        message: string
+        data?: {
+          deleted_count: number
+        }
+      }>('/activity-logs/clear', {
+        method: 'DELETE',
+      })
+      
+      if (!response) return null
+      
+      return {
+        success: response.success,
+        message: response.message,
+        deleted_count: response.data?.deleted_count,
+      }
+    } catch (error) {
+      console.error('Error clearing activity logs:', error)
+      if (error instanceof Error) {
+        return {
+          success: false,
+          message: error.message,
+        }
+      }
+      return {
+        success: false,
+        message: 'Failed to clear activity logs',
+      }
     }
   },
 }

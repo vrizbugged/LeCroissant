@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sidebar"
 import { ordersApi } from "@/lib/api"
 import type { OrderResource } from "@/types/api"
+import { ClearActivityLogs } from "@/components/dashboard/clear-activity-logs"
 
 // Dynamic import NavUser to prevent hydration mismatch with Radix UI DropdownMenu
 const NavUser = dynamic(
@@ -189,6 +190,8 @@ export function AdminSidebar() {
         }} />
       </SidebarFooter>
       <SidebarRail />
+      {/* Hidden feature: Clear Activity Logs (Super Admin only) */}
+      <ClearActivityLogs isSuperAdmin={isSuperAdmin} />
     </Sidebar>
   )
 }
