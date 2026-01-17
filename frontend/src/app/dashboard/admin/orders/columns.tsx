@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreVertical } from "lucide-react"
+import { MoreVertical, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -45,6 +45,22 @@ const formatDate = (dateString: string): string => {
     month: "long",
     day: "numeric",
   }).format(date)
+}
+
+// Check if order is new (created within last 24 hours and not viewed)
+const isOrderNew = (orderId: number, createdAt?: string | null): boolean => {
+  if (!createdAt) return false
+  
+  // Check if order has been viewed
+  if (typeof window !== 'undefined') {
+    const viewedOrders = JSON.parse(localStorage.getItem('viewed_orders') || '[]')
+    if (viewedOrders.includes(orderId)) return false
+  }
+  
+  const orderDate = new Date(createdAt)
+  const now = new Date()
+  const diffInHours = (now.getTime() - orderDate.getTime()) / (1000 * 60 * 60)
+  return diffInHours <= 24
 }
 
 // Get status badge variant and label
@@ -145,7 +161,30 @@ export const columns: ColumnDef<OrderResource>[] = [
     accessorKey: "id",
     header: "ID",
     cell: ({ row }) => {
-      return <div className="font-medium">{row.original.id}</div>
+      const order = row.original
+      const isNew = isOrderNew(order.id, order.created_at)
+      
+      // Mark as viewed when cell is rendered (only once)
+      if (isNew && typeof window !== 'undefined') {
+        const viewedOrders = JSON.parse(localStorage.getItem('viewed_orders') || '[]')
+        if (!viewedOrders.includes(order.id)) {
+          viewedOrders.push(order.id)
+          localStorage.setItem('viewed_orders', JSON.stringify(viewedOrders))
+          // Dispatch custom event to notify sidebar
+          window.dispatchEvent(new CustomEvent('ordersViewed'))
+        }
+      }
+      
+      return (
+        <div className="flex items-center gap-2">
+          <div className="font-medium">#{order.id}</div>
+          {isNew && (
+            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-300 text-xs">
+              Baru
+            </Badge>
+          )}
+        </div>
+      )
     },
   },
   {
@@ -168,9 +207,20 @@ export const columns: ColumnDef<OrderResource>[] = [
   },
   {
     accessorKey: "delivery_date",
-    header: "Delivery Date",
+    header: "Tanggal Pengiriman",
     cell: ({ row }) => {
-      return <div>{formatDate(row.original.delivery_date)}</div>
+      const order = row.original
+      const isNew = isOrderNew(order.id, order.created_at)
+      return (
+        <div className="flex items-center gap-2">
+          <div>{formatDate(order.delivery_date)}</div>
+          {isNew && (
+            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-300 text-xs">
+              Baru
+            </Badge>
+          )}
+        </div>
+      )
     },
   },
   {
@@ -189,7 +239,7 @@ export const columns: ColumnDef<OrderResource>[] = [
   },
   {
     id: "actions",
-    header: "Actions",
+    header: "Aksi",
     cell: ({ row }) => {
       const order = row.original
       const currentStatus = order.status

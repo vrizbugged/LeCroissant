@@ -262,47 +262,60 @@ export default function MyTransactionsPage() {
                   {latestOrder.status !== 'dibatalkan' && (
                     <div className="relative">
                       <div className="flex items-center justify-between">
-                        {statusSteps.map((step, index) => {
-                          const currentStepIndex = getStatusStepIndex(latestOrder.status)
-                          const isActive = index <= currentStepIndex
-                          const isCurrent = index === currentStepIndex
-                          const Icon = step.icon
+                      {statusSteps.map((step, index) => {
+                      const currentStepIndex = getStatusStepIndex(latestOrder.status)
+                      const isActive = index <= currentStepIndex
+                      const isCurrent = index === currentStepIndex
+                      const Icon = step.icon
 
-                          return (
-                            <React.Fragment key={step.key}>
-                              <div className="flex flex-col items-center flex-1">
-                                <div
-                                  className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-colors ${
-                                    isActive
-                                      ? 'bg-orange-600 border-orange-600 text-white'
-                                      : 'bg-background border-muted text-muted-foreground'
-                                  }`}
-                                >
-                                  <Icon className="h-6 w-6" />
-                                </div>
-                                <p
-                                  className={`mt-2 text-sm font-medium text-center ${
-                                    isActive ? 'text-foreground' : 'text-muted-foreground'
-                                  }`}
-                                >
-                                  {step.label}
-                                </p>
-                                {isCurrent && (
-                                  <Badge className="mt-1 bg-orange-600 text-white">
-                                    Status Saat Ini
-                                  </Badge>
-                                )}
-                              </div>
-                              {index < statusSteps.length - 1 && (
-                                <div
-                                  className={`flex-1 h-0.5 mx-2 ${
-                                    isActive ? 'bg-orange-600' : 'bg-muted'
-                                  }`}
-                                />
-                              )}
-                            </React.Fragment>
-                          )
-                        })}
+                      return (
+                        <React.Fragment key={step.key}>
+                          <div className="flex flex-col items-center flex-1">
+                            {/* 1. ICON LINGKARAN (HIJAU jika Selesai, ORANGE jika lainnya) */}
+                            <div
+                              className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-colors ${
+                                isActive
+                                  ? step.key === 'selesai'
+                                    ? 'bg-green-600 border-green-600 text-white'
+                                    : 'bg-orange-600 border-orange-600 text-white'
+                                  : 'bg-background border-muted text-muted-foreground'
+                              }`}
+                            >
+                              <Icon className="h-6 w-6" />
+                            </div>
+
+                            {/* 2. LABEL TEKS DI BAWAH ICON */}
+                            <p
+                              className={`mt-2 text-sm font-medium text-center ${
+                                isActive ? 'text-foreground' : 'text-muted-foreground'
+                              }`}
+                            >
+                              {step.label}
+                            </p>
+
+                            {/* 3. BADGE STATUS (Dinamis: Teks & Warna) */}
+                            {isCurrent && (
+                              <Badge
+                                className={`mt-1 text-white ${
+                                  step.key === 'selesai' ? 'bg-green-600' : 'bg-orange-600'
+                                }`}
+                              >
+                                {step.key === 'selesai' ? 'Pesanan Selesai' : 'Status Saat Ini'}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* 4. GARIS PENGHUBUNG ANTAR STEP */}
+                          {index < statusSteps.length - 1 && (
+                            <div
+                              className={`flex-1 h-0.5 mx-2 ${
+                                isActive ? 'bg-orange-600' : 'bg-muted'
+                              }`}
+                            />
+                          )}
+                        </React.Fragment>
+                      )
+                    })}
                       </div>
                     </div>
                   )}

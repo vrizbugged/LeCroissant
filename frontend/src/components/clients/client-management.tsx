@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { CheckCircle2Icon, PencilIcon, PlusIcon, TrashIcon, MoreVertical } from "lucide-react"
+import { CheckCircle2Icon, PencilIcon, PlusIcon, TrashIcon, MoreVertical, ChevronDown, ChevronRight, Phone, MapPin, Globe, Calendar1, CalendarArrowUp } from "lucide-react"
 
 import type { ClientResource, ClientFormData } from "@/types/api"
 import { clientsApi } from "@/lib/api"
@@ -79,6 +79,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
   const [clients, setClients] = React.useState<ClientResource[]>(initialClients || [])
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [editingClient, setEditingClient] = React.useState<ClientResource | null>(null)
+  const [expandedRows, setExpandedRows] = React.useState<Set<number>>(new Set())
 
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientFormSchema),
@@ -192,6 +193,18 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
   const handleAdd = () => {
     setEditingClient(null)
     setIsDialogOpen(true)
+  }
+
+  const toggleRow = (clientId: number) => {
+    setExpandedRows((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(clientId)) {
+        newSet.delete(clientId)
+      } else {
+        newSet.add(clientId)
+      }
+      return newSet
+    })
   }
 
   const getStatusBadge = (status?: string) => {
@@ -403,6 +416,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12"></TableHead>
                   <TableHead>Nama</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Perusahaan</TableHead>
@@ -415,53 +429,175 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
               <TableBody>
                 {clients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       Belum ada data klien
                     </TableCell>
                   </TableRow>
                 ) : (
-                  clients.map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium">{client.name}</TableCell>
-                      <TableCell>{client.email}</TableCell>
-                      <TableCell>{client.company_name || "-"}</TableCell>
-                      <TableCell>{client.business_sector || "-"}</TableCell>
-                      <TableCell>{getStatusBadge(client.status)}</TableCell>
-                      <TableCell>{client.total_orders_count || 0}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleEdit(client)}>
-                              <PencilIcon className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            {client.status === "Pending" && (
-                              <DropdownMenuItem onClick={() => handleVerify(client.id)}>
-                                <CheckCircle2Icon className="mr-2 h-4 w-4" />
-                                Verifikasi
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(client.id)}
-                              className="text-red-600"
+                  clients.map((client) => {
+                    const isExpanded = expandedRows.has(client.id)
+                    return (
+                      <React.Fragment key={client.id}>
+                        <TableRow className="hover:bg-muted/50">
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => toggleRow(client.id)}
                             >
-                              <TrashIcon className="mr-2 h-4 w-4" />
-                              Hapus
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </TableCell>
+                          <TableCell className="font-medium">{client.name}</TableCell>
+                          <TableCell>{client.email}</TableCell>
+                          <TableCell>{client.company_name || "-"}</TableCell>
+                          <TableCell>{client.business_sector || "-"}</TableCell>
+                          <TableCell>{getStatusBadge(client.status)}</TableCell>
+                          <TableCell>{client.total_orders_count || 0}</TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleEdit(client)}>
+                                  <PencilIcon className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                {client.status === "Pending" && (
+                                  <DropdownMenuItem onClick={() => handleVerify(client.id)}>
+                                    <CheckCircle2Icon className="mr-2 h-4 w-4" />
+                                    Verifikasi
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDelete(client.id)}
+                                  className="text-red-600"
+                                >
+                                  <TrashIcon className="mr-2 h-4 w-4" />
+                                  Hapus
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                        {isExpanded && (
+                          <TableRow>
+                            <TableCell colSpan={8} className="bg-muted/30 p-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {/* Nomor Telepon */}
+                                {client.phone_number && (
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white-500/10 flex-shrink-0 mt-0.5">
+                                      <Phone className="h-4 w-4 text-gray-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-sm mb-0.5">Nomor Telepon</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {client.phone_number}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Alamat */}
+                                {client.address && (
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white-500/10 flex-shrink-0 mt-0.5">
+                                      <MapPin className="h-4 w-4 text-gray-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-sm mb-0.5">Alamat</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {client.address}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Kewarganegaraan */}
+                                {client.citizenship && (
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white-500/10 flex-shrink-0 mt-0.5">
+                                      <Globe className="h-4 w-4 text-gray-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-sm mb-0.5">Kewarganegaraan</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {client.citizenship}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* ID Klien */}
+                                <div className="flex items-start gap-3">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white-500/10 flex-shrink-0 mt-0.5">
+                                    <span className="text-xs font-bold text-gray-600">ID</span>
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-sm mb-0.5">ID Klien</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      #{client.id}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Tanggal Dibuat */}
+                                {client.created_at && (
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white-500/10 flex-shrink-0 mt-0.5">
+                                      <Calendar1 className="h-4 w-4 text-gray-600" /> 
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-sm mb-0.5">Tanggal Dibuat</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {new Date(client.created_at).toLocaleDateString('id-ID', {
+                                          year: 'numeric',
+                                          month: 'long',
+                                          day: 'numeric'
+                                        })}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Tanggal Diperbarui */}
+                                {client.updated_at && (
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white-500/10 flex-shrink-0 mt-0.5">
+                                      <CalendarArrowUp className="h-4 w-4 text-gray-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-sm mb-0.5">Terakhir Diperbarui</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {new Date(client.updated_at).toLocaleDateString('id-ID', {
+                                          year: 'numeric',
+                                          month: 'long',
+                                          day: 'numeric'
+                                        })}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    )
+                  })
                 )}
               </TableBody>
             </Table>

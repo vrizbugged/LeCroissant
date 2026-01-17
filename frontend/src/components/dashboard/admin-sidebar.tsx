@@ -27,6 +27,8 @@ import {
   SidebarTrigger,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { ordersApi } from "@/lib/api"
+import type { OrderResource } from "@/types/api"
 
 // Dynamic import NavUser to prevent hydration mismatch with Radix UI DropdownMenu
 const NavUser = dynamic(
@@ -79,6 +81,7 @@ export function AdminSidebar() {
   const pathname = usePathname()
   const [user, setUser] = React.useState<any>(null)
   const [isSuperAdmin, setIsSuperAdmin] = React.useState(false)
+  const [newOrdersCount, setNewOrdersCount] = React.useState(0)
 
   // Get user from localStorage
   React.useEffect(() => {
@@ -99,13 +102,56 @@ export function AdminSidebar() {
     }
   }, [])
 
+  // Check for new orders (created within last 24 hours and not viewed)
+  const checkNewOrders = React.useCallback(async () => {
+    try {
+      const response = await ordersApi.getAll()
+      if (response && response.data) {
+        const now = new Date()
+        const viewedOrders = JSON.parse(localStorage.getItem('viewed_orders') || '[]')
+        const newOrders = response.data.filter((order: OrderResource) => {
+          if (!order.created_at) return false
+          // Skip if already viewed
+          if (viewedOrders.includes(order.id)) return false
+          const orderDate = new Date(order.created_at)
+          const diffInHours = (now.getTime() - orderDate.getTime()) / (1000 * 60 * 60)
+          return diffInHours <= 24
+        })
+        setNewOrdersCount(newOrders.length)
+      }
+    } catch (error) {
+      console.error('Error checking new orders:', error)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    checkNewOrders()
+    // Check every 30 seconds
+    const interval = setInterval(checkNewOrders, 30000)
+    
+    // Listen for custom event when orders are viewed
+    const handleOrdersViewed = () => {
+      checkNewOrders()
+    }
+    window.addEventListener('ordersViewed', handleOrdersViewed)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('ordersViewed', handleOrdersViewed)
+    }
+  }, [checkNewOrders])
+
   // Combine nav items based on role
   const navItems = React.useMemo(() => {
-    if (isSuperAdmin) {
-      return [...baseNavItems, ...superAdminNavItems]
-    }
-    return baseNavItems
-  }, [isSuperAdmin])
+    const items = isSuperAdmin ? [...baseNavItems, ...superAdminNavItems] : baseNavItems
+    // Add notification badge to Manajemen Pesanan
+    return items.map(item => {
+      if (item.url === '/dashboard/orders') {
+        return { ...item, badge: newOrdersCount > 0 ? newOrdersCount : undefined }
+      }
+      return item
+    })
+  }, [isSuperAdmin, newOrdersCount])
 
   return (
     <Sidebar 
