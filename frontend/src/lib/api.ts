@@ -346,9 +346,7 @@ export const productsApi = {
       formData.append('harga_grosir', data.harga_grosir.toString())
       formData.append('ketersediaan_stok', data.ketersediaan_stok.toString())
       if (data.gambar instanceof File) {
-        formData.append('gambar', data.gambar)
-      } else if (data.gambar && typeof data.gambar === 'string') {
-        formData.append('gambar', data.gambar)
+        formData.append('image', data.gambar) // <--- GANTI JADI 'image'
       }
       // Status is required by backend, always send it
       // Map English status to Indonesian format expected by backend
@@ -416,24 +414,24 @@ export const productsApi = {
    */
   update: async (id: number, data: Partial<ProductFormData>): Promise<ProductResource | null> => {
     try {
-      // Handle FormData for file upload
       const formData = new FormData()
+      formData.append('_method', 'PUT') // Method Spoofing
 
-      // --- FIX: Tambahkan _method PUT ---
-      formData.append('_method', 'PUT')
-      // ----------------------------------
-
-      // Always send required fields
+      // Kirim data text (pastikan konversi string jika perlu)
       if (data.nama_produk) formData.append('nama_produk', data.nama_produk)
-      if (data.deskripsi !== undefined) formData.append('deskripsi', data.deskripsi || '')
+      if (data.deskripsi) formData.append('deskripsi', data.deskripsi)
       if (data.harga_grosir !== undefined) formData.append('harga_grosir', data.harga_grosir.toString())
       if (data.ketersediaan_stok !== undefined) formData.append('ketersediaan_stok', data.ketersediaan_stok.toString())
-      
-      // Handle gambar upload
-      if (data.gambar instanceof File) {
-        formData.append('gambar', data.gambar)
-      } else if (data.gambar && typeof data.gambar === 'string' && data.gambar.trim() !== '') {
-        // formData.append('gambar', data.gambar) // Optional: biasanya tidak perlu kirim string URL balik
+      if (data.status) formData.append('status', data.status)
+
+      // --- BAGIAN KRUSIAL (LOGIC GAMBAR) ---
+      // 1. Cek apakah ada data.gambar
+      // 2. Cek apakah itu File beneran (bukan string URL)
+      if (data.gambar && data.gambar instanceof File) {
+          console.log("🚀 MENGIRIM FILE KE BACKEND:", data.gambar.name) // Cek Console Browser nanti
+          
+          // PENTING: Key harus 'image' (sesuai Controller Laravel)
+          formData.append('image', data.gambar) 
       }
       // Status is required by backend, always send it
       // Map English status to Indonesian format expected by backend

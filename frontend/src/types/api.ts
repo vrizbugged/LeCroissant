@@ -21,6 +21,7 @@ export interface ProductFormData {
   harga_grosir: number
   ketersediaan_stok: number
   image_url?: File | string // File for upload or string for existing image
+  gambar?: File | string | null
   status?: string
 }
 

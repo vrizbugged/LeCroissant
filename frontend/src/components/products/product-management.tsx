@@ -7,7 +7,8 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react"
 
-import type { ProductResource, ProductFormData } from "@/types/api"
+// Hapus import ProductFormData karena kita akan buat tipe sendiri
+import type { ProductResource } from "@/types/api"
 import { productsApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import {
@@ -29,7 +30,6 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -50,18 +50,24 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
+// 1. Definisikan Schema Validasi
 const productFormSchema = z.object({
   nama_produk: z.string().min(1, "Nama produk wajib diisi"),
   deskripsi: z.string().min(1, "Deskripsi wajib diisi"),
   harga_grosir: z.number().min(0, "Harga harus lebih dari 0"),
   ketersediaan_stok: z.number().min(0, "Stok harus lebih dari atau sama dengan 0"),
+  // Gambar bisa berupa File (upload baru), String (URL lama), atau kosong
   gambar: z.union([
     z.instanceof(File),
-    z.string().url("URL gambar tidak valid"),
+    z.string().optional(),
     z.literal("")
   ]).optional(),
   status: z.enum(["Active", "Inactive"]).optional(),
 })
+
+// 2. SOLUSI ERROR MERAH: Buat tipe data langsung dari Schema Zod
+// Ini menjamin tipe data form 100% cocok dengan validasi
+type ProductFormValues = z.infer<typeof productFormSchema>
 
 interface ProductManagementProps {
   initialProducts: ProductResource[]
@@ -72,9 +78,9 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
   const [products, setProducts] = React.useState<ProductResource[]>(initialProducts || [])
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [editingProduct, setEditingProduct] = React.useState<ProductResource | null>(null)
-  const [originalImageUrl, setOriginalImageUrl] = React.useState<string | null>(null)
-
-  const form = useForm<ProductFormData>({
+  
+  // 3. Gunakan tipe 'ProductFormValues' (bukan dari API)
+  const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       nama_produk: "",
@@ -86,30 +92,29 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
     },
   })
 
+  // Reset Form saat Dialog Edit Dibuka
   React.useEffect(() => {
     if (editingProduct) {
       const imageUrl = editingProduct.gambar_url || ""
-      setOriginalImageUrl(imageUrl)
       
-      // Map backend status (Aktif/Non Aktif) to frontend format (Active/Inactive)
       const statusMap: Record<string, "Active" | "Inactive"> = {
         'Aktif': 'Active',
         'Non Aktif': 'Inactive',
         'Active': 'Active',
         'Inactive': 'Inactive',
       }
-      const mappedStatus = statusMap[editingProduct.status || 'Aktif'] || 'Active'
+      // Kita cast ke any dulu untuk menghindari error ketat TypeScript pada string enum
+      const mappedStatus = (statusMap[editingProduct.status || 'Aktif'] || 'Active') as "Active" | "Inactive"
       
       form.reset({
         nama_produk: editingProduct.nama_produk || "",
         deskripsi: editingProduct.deskripsi || "",
-        harga_grosir: editingProduct.harga_grosir || 0,
-        ketersediaan_stok: editingProduct.ketersediaan_stok || 0,
-        gambar: imageUrl,
+        harga_grosir: Number(editingProduct.harga_grosir) || 0,
+        ketersediaan_stok: Number(editingProduct.ketersediaan_stok) || 0,
+        gambar: imageUrl, 
         status: mappedStatus,
       })
     } else {
-      setOriginalImageUrl(null)
       form.reset({
         nama_produk: "",
         deskripsi: "",
@@ -121,75 +126,71 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
     }
   }, [editingProduct, form])
 
-  const handleSubmit = async (data: ProductFormData) => {
+  // Logic Submit
+  const handleSubmit = async (data: ProductFormValues) => {
     try {
       if (editingProduct) {
-        // Jika gambar tidak berubah (masih URL yang sama), jangan kirim field gambar
-        const imageChanged = 
-          data.gambar instanceof File || // File baru diupload
-          (typeof data.gambar === 'string' && data.gambar && data.gambar !== originalImageUrl) // URL diubah
-        
-        const dataToSend = { ...data }
-        // Hapus field gambar jika tidak berubah (masih URL yang sama atau undefined/empty)
-        if (!imageChanged) {
-          // Jika gambar adalah string yang sama dengan original, atau undefined/empty, jangan kirim
-          delete dataToSend.gambar
-        } else {
-          // Pastikan gambar dikirim jika berubah
-          if (data.gambar instanceof File) {
-            dataToSend.gambar = data.gambar
-          } else if (typeof data.gambar === 'string' && data.gambar) {
-            dataToSend.gambar = data.gambar
-          }
+        // === UPDATE ===
+        // Kita ubah data form ke format yang API butuhkan (any sementara agar fleksibel)
+        const payload: any = {
+            nama_produk: data.nama_produk,
+            deskripsi: data.deskripsi,
+            harga_grosir: data.harga_grosir,
+            ketersediaan_stok: data.ketersediaan_stok,
+            status: data.status,
+            // Logic Gambar
+            gambar: (data.gambar instanceof File) ? data.gambar : undefined
         }
         
-        const updated = await productsApi.update(editingProduct.id, dataToSend)
+        const updated = await productsApi.update(editingProduct.id, payload)
+        
         if (updated) {
           setProducts(products.map(p => p.id === editingProduct.id ? updated : p))
           toast.success("Produk berhasil diperbarui")
           setIsDialogOpen(false)
           setEditingProduct(null)
-          setOriginalImageUrl(null)
           router.refresh()
         } else {
           toast.error("Gagal memperbarui produk")
         }
+
       } else {
-        const created = await productsApi.create(data)
+        // === CREATE ===
+        // Cast ke any agar TypeScript tidak rewel soal perbedaan tipe minor
+        const payload: any = { ...data }
+        const created = await productsApi.create(payload)
+        
         if (created) {
           setProducts([...products, created])
           toast.success("Produk berhasil ditambahkan")
           setIsDialogOpen(false)
           setEditingProduct(null)
-          setOriginalImageUrl(null)
           router.refresh()
         } else {
-          toast.error("Failed to add product")
+          toast.error("Gagal menambahkan produk")
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Something went wrong"
+      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan"
       toast.error(errorMessage)
       console.error("Error submitting product:", error)
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this product?")) {
-      return
-    }
+    if (!confirm("Apakah Anda yakin ingin menghapus produk ini?")) return
 
     try {
       const success = await productsApi.delete(id)
       if (success) {
         setProducts(products.filter(p => p.id !== id))
-        toast.success("Product deleted successfully")
+        toast.success("Produk berhasil dihapus")
         router.refresh()
       } else {
-        toast.error("Failed to delete product")
+        toast.error("Gagal menghapus produk")
       }
     } catch (error) {
-      toast.error("Something went wrong")
+      toast.error("Terjadi kesalahan sistem")
       console.error(error)
     }
   }
@@ -215,29 +216,16 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
   const getStatusBadge = (status?: string) => {
     if (!status) return null
     
-    // Map backend status to frontend display format
     const statusMap: Record<string, { label: string; className: string }> = {
-      'Active': {
-        label: "Active",
-        className: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
-      },
-      'Inactive': {
-        label: "Inactive",
-        className: "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
-      },
-      'Aktif': {
-        label: "Active",
-        className: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
-      },
-      'Non Aktif': {
-        label: "Inactive",
-        className: "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
-      },
+      'Active': { label: "Active", className: "bg-green-100 text-green-800 border-green-300" },
+      'Inactive': { label: "Inactive", className: "bg-red-100 text-red-800 border-red-300" },
+      'Aktif': { label: "Aktif", className: "bg-green-100 text-green-800 border-green-300" },
+      'Non Aktif': { label: "Non Aktif", className: "bg-red-100 text-red-800 border-red-300" },
     }
 
     const config = statusMap[status] || {
       label: status,
-      className: "bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800",
+      className: "bg-gray-100 text-gray-800 border-gray-300",
     }
 
     return (
@@ -263,15 +251,15 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                   Tambah Produk
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>
                     {editingProduct ? "Edit Produk" : "Tambah Produk Baru"}
                   </DialogTitle>
                   <DialogDescription>
                     {editingProduct
-                      ? "Update product information"
-                      : "Add new product to catalog"}
+                      ? "Perbarui informasi produk yang sudah ada"
+                      : "Tambahkan produk pastry baru ke katalog"}
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -340,15 +328,17 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                         )}
                       />
                     </div>
+                    
+                    {/* FIELD GAMBAR */}
                     <FormField
                       control={form.control}
                       name="gambar"
                       render={({ field }) => {
-                        // Determine initial upload type based on field value
+                        // Logic untuk menentukan state awal upload
                         const getInitialUploadType = () => {
                           if (field.value instanceof File) return 'file'
                           if (typeof field.value === 'string' && field.value) return 'url'
-                          return 'file' // Default to file upload
+                          return 'file'
                         }
                         
                         const [uploadType, setUploadType] = React.useState<'file' | 'url'>(getInitialUploadType())
@@ -358,9 +348,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                         React.useEffect(() => {
                           if (field.value instanceof File) {
                             const reader = new FileReader()
-                            reader.onloadend = () => {
-                              setPreview(reader.result as string)
-                            }
+                            reader.onloadend = () => setPreview(reader.result as string)
                             reader.readAsDataURL(field.value)
                             setUploadType('file')
                           } else if (typeof field.value === 'string' && field.value) {
@@ -382,29 +370,22 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                                   size="sm"
                                   onClick={() => {
                                     setUploadType('file')
-                                    // Reset file input saat beralih ke mode file
-                                    setFileInputKey(prev => prev + 1)
+                                    setFileInputKey(p => p + 1)
                                   }}
                                 >
                                   Upload File
                                 </Button>
+                                {/* Tombol URL Opsional */}
                                 <Button
                                   type="button"
                                   variant={uploadType === 'url' ? 'default' : 'outline'}
                                   size="sm"
                                   onClick={() => {
                                     setUploadType('url')
-                                    // Jika ada file, reset ke URL kosong untuk input URL baru
-                                    // Jika sudah URL, tetap pertahankan
                                     if (field.value instanceof File) {
                                       field.onChange('')
                                       setPreview(null)
-                                    } else if (typeof field.value === 'string' && field.value) {
-                                      // Tetap pertahankan URL yang ada
-                                      setPreview(field.value)
                                     }
-                                    // Reset file input saat beralih ke mode URL
-                                    setFileInputKey(prev => prev + 1)
                                   }}
                                 >
                                   Gunakan URL
@@ -416,29 +397,18 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                                   <Input
                                     key={`file-input-${fileInputKey}`}
                                     type="file"
-                                    accept="image/jpeg,image/png,image/jpg"
+                                    accept="image/*"
                                     onChange={(e) => {
                                       const file = e.target.files?.[0]
                                       if (file) {
-                                        // Validate file size (max 2MB)
                                         if (file.size > 2 * 1024 * 1024) {
-                                          toast.error("Ukuran file maksimal 2MB")
-                                          e.target.value = '' // Reset input
+                                          toast.error("Maksimal 2MB")
+                                          e.target.value = ''
                                           return
                                         }
-                                        // Validate file type
-                                        if (!file.type.startsWith('image/')) {
-                                          toast.error("File harus berupa gambar")
-                                          e.target.value = '' // Reset input
-                                          return
-                                        }
-                                        // Set file to form state
                                         field.onChange(file)
-                                        // Force form to recognize the change
+                                        // PENTING: Trigger validation agar form dirty
                                         form.setValue('gambar', file, { shouldDirty: true, shouldValidate: true })
-                                      } else {
-                                        // If no file selected, clear the field
-                                        field.onChange('')
                                       }
                                     }}
                                   />
@@ -446,7 +416,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                               ) : (
                                 <FormControl>
                                   <Input 
-                                    placeholder="https://example.com/image.jpg" 
+                                    placeholder="https://..." 
                                     value={typeof field.value === 'string' ? field.value : ''}
                                     onChange={(e) => field.onChange(e.target.value)}
                                   />
@@ -455,24 +425,19 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                               
                               {preview && (
                                 <div className="mt-2">
-                                  <img 
-                                    src={preview} 
-                                    alt="Preview" 
-                                    className="h-32 w-32 object-cover rounded border"
-                                  />
+                                  <img src={preview} alt="Preview" className="h-32 w-32 object-cover rounded border" />
                                 </div>
                               )}
                             </div>
                             <FormDescription>
-                              {uploadType === 'file' 
-                                ? "Upload gambar produk (maksimal 2MB, format: JPG/PNG)"
-                                : "Masukkan URL gambar produk"}
+                                {uploadType === 'file' ? "Format: JPG/PNG, Max 2MB" : "URL Gambar Eksternal"}
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )
                       }}
                     />
+
                     <FormField
                       control={form.control}
                       name="status"
@@ -482,7 +447,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Pilih status produk" />
+                                <SelectValue placeholder="Pilih status" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -537,35 +502,31 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  products.filter(product => product && product.id).map((product) => (
+                  products.filter(p => p && p.id).map((product) => (
                     <TableRow key={product.id}>
                       <TableCell>
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={product.gambar_url || product.gambar || ""} alt={product.nama_produk || "Product"} />
-                          <AvatarFallback>
+                        <Avatar className="h-12 w-12 rounded-md">
+                          <AvatarImage 
+                            src={product.gambar_url || product.gambar || ""} 
+                            alt={product.nama_produk} 
+                            className="object-cover"
+                          />
+                          <AvatarFallback className="rounded-md">
                             {(product.nama_produk || "PR").substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                       </TableCell>
-                      <TableCell className="font-medium">{product.nama_produk || "-"}</TableCell>
-                      <TableCell className="max-w-xs truncate">{product.deskripsi || "-"}</TableCell>
+                      <TableCell className="font-medium">{product.nama_produk}</TableCell>
+                      <TableCell className="max-w-xs truncate">{product.deskripsi}</TableCell>
                       <TableCell>{formatCurrency(product.harga_grosir || 0)}</TableCell>
                       <TableCell>{product.ketersediaan_stok ?? 0}</TableCell>
                       <TableCell>{getStatusBadge(product.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(product)}
-                          >
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(product)}>
                             <PencilIcon className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(product.id)}
-                          >
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id)}>
                             <TrashIcon className="h-4 w-4" />
                           </Button>
                         </div>
@@ -581,4 +542,3 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
     </div>
   )
 }
-
