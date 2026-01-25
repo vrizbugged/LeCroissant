@@ -335,6 +335,26 @@ export const productsApi = {
   },
 
   /**
+   * Get most ordered products
+   */
+  getMostOrdered: async (limit?: number): Promise<ProductResource[]> => {
+    try {
+      const queryParams = new URLSearchParams()
+      if (limit) queryParams.append('limit', limit.toString())
+      
+      const queryString = queryParams.toString()
+      const endpoint = `/products/most-ordered${queryString ? `?${queryString}` : ''}`
+      
+      const response = await apiRequest<ApiResponse<ProductResource[]>>(endpoint)
+      if (!response) return []
+      return response.data || []
+    } catch (error) {
+      console.error('Error fetching most ordered products:', error)
+      return []
+    }
+  },
+
+  /**
    * Create new product (Admin only - requires permission)
    */
   create: async (data: ProductFormData): Promise<ProductResource | null> => {

@@ -11,6 +11,7 @@ import { Navbar } from "@/components/navbar/navbar"
 import { Footer } from "@/components/footer/footer"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
 import { motion, useScroll, useTransform } from "framer-motion"
+import { MostOrderedShowcase } from "./most-ordered-showcase"
 
 // Import API dan Type order SUDAH DIHAPUS karena tidak dipakai
 
@@ -166,6 +167,11 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      <Separator />
+
+      {/* Most Ordered Products Showcase */}
+      <MostOrderedShowcase />
 
       <Separator />
 
