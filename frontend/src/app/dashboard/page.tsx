@@ -79,32 +79,32 @@ export default function DashboardPage() {
 
   const kpiCards = [
     {
-      title: "Total Pendapatan",
+      title: "Total Revenue",
       value: `Rp ${stats.total_pendapatan.toLocaleString("id-ID")}`,
       icon: DollarSign,
-      description: "Pendapatan bulan ini",
+      description: "This month's revenue",
 
       
     },
     {
-      title: "Pesanan Pending",
+      title: "Pending Orders",
       value: stats.pesanan_pending,
       icon: ShoppingCart,
-      description: "Menunggu verifikasi",
+      description: "Awaiting verification",
       href: "/dashboard/orders"
     },
     {
-      title: "Produk Aktif",
+      title: "Active Products",
       value: stats.produk_aktif,
       icon: Package,
-      description: "Produk tersedia",
+      description: "Available products",
       href: "/dashboard/products"
     },
     {
-      title: "Total Klien B2B",
+      title: "Total B2B Clients",
       value: stats.total_klien_b2b,
       icon: Users,
-      description: "Klien terdaftar",
+      description: "Registered clients",
       href: "/dashboard/clients"
     },
   ]
@@ -162,7 +162,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Overview bisnis pastry Le Croissant
+            Overview of Le Croissant pastry business
           </p>
         </div>
         <Button
@@ -226,7 +226,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Revenue Trend</CardTitle>
-            <CardDescription>Pendapatan 6 bulan terakhir</CardDescription>
+            <CardDescription>Revenue for the last 6 months</CardDescription>
           </CardHeader>
           <CardContent>
             {chartData.length > 0 ? (
@@ -274,7 +274,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Orders Trend</CardTitle>
-            <CardDescription>Jumlah pesanan 6 bulan terakhir</CardDescription>
+            <CardDescription>Number of orders for the last 6 months</CardDescription>
           </CardHeader>
           <CardContent>
             {chartData.length > 0 ? (
@@ -321,9 +321,9 @@ export default function DashboardPage() {
       {/* Recent Orders Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Pesanan Terbaru</CardTitle>
+          <CardTitle>Recent Orders</CardTitle>
           <CardDescription>
-            Daftar pesanan terbaru dari klien B2B
+            List of recent orders from B2B clients
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -332,10 +332,10 @@ export default function DashboardPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Order ID</TableHead>
-                  <TableHead>Nama Klien</TableHead>
-                  <TableHead>Total Harga</TableHead>
+                  <TableHead>Client Name</TableHead>
+                  <TableHead>Total Price</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Tanggal</TableHead>
+                  <TableHead>Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -364,7 +364,7 @@ export default function DashboardPage() {
             </Table>
           ) : (
             <p className="text-center text-muted-foreground py-8">
-              Belum ada pesanan
+              No orders yet
             </p>
           )}
         </CardContent>

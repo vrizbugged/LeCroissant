@@ -7,7 +7,7 @@ export interface ProductResource {
   deskripsi?: string | null
   harga_grosir: number
   harga_formatted?: string // Formatted price from backend
-  ketersediaan_stok: number
+  min_order: number // Minimal order per produk
   image_url?: string | null
   status?: string // Aktif or Non Aktif
   created_at?: string | null
@@ -19,7 +19,7 @@ export interface ProductFormData {
   nama_produk: string
   deskripsi?: string
   harga_grosir: number
-  ketersediaan_stok: number
+  min_order?: number // Minimal order per produk
   image_url?: File | string // File for upload or string for existing image
   gambar?: File | string | null
   status?: string
@@ -55,7 +55,6 @@ export interface OrderProductResource {
   name: string
   description?: string
   price_b2b: number
-  stock: number
   image_url?: string
   pivot: {
     quantity: number

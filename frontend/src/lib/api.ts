@@ -364,7 +364,7 @@ export const productsApi = {
       formData.append('nama_produk', data.nama_produk)
       if (data.deskripsi) formData.append('deskripsi', data.deskripsi)
       formData.append('harga_grosir', data.harga_grosir.toString())
-      formData.append('ketersediaan_stok', data.ketersediaan_stok.toString())
+      if (data.min_order !== undefined) formData.append('min_order', data.min_order.toString())
       if (data.gambar instanceof File) {
         formData.append('image', data.gambar) // <--- GANTI JADI 'image'
       }
@@ -441,7 +441,7 @@ export const productsApi = {
       if (data.nama_produk) formData.append('nama_produk', data.nama_produk)
       if (data.deskripsi) formData.append('deskripsi', data.deskripsi)
       if (data.harga_grosir !== undefined) formData.append('harga_grosir', data.harga_grosir.toString())
-      if (data.ketersediaan_stok !== undefined) formData.append('ketersediaan_stok', data.ketersediaan_stok.toString())
+      if (data.min_order !== undefined) formData.append('min_order', data.min_order.toString())
       if (data.status) formData.append('status', data.status)
 
       // --- BAGIAN KRUSIAL (LOGIC GAMBAR) ---

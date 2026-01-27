@@ -62,7 +62,7 @@ export default function ActivityLogsPage() {
       }
     } catch (error) {
       console.error("Error fetching activity logs:", error)
-      toast.error("Gagal memuat activity logs")
+      toast.error("Failed to load activity logs")
     } finally {
       setLoading(false)
     }
@@ -111,10 +111,10 @@ export default function ActivityLogsPage() {
         a.click()
         window.URL.revokeObjectURL(url)
 
-        toast.success("Activity logs berhasil diekspor")
+        toast.success("Activity logs exported successfully")
       }
     } catch (error) {
-      toast.error("Gagal mengekspor activity logs")
+      toast.error("Failed to export activity logs")
     }
   }
 
@@ -139,12 +139,12 @@ export default function ActivityLogsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Activity Log</h1>
           <p className="text-muted-foreground">
-            Log aktivitas sistem dan perubahan data
+            Log activity system and data changes
           </p>
         </div>
         <Button onClick={handleExport} variant="outline">
           <Download className="mr-2 h-4 w-4" />
-          Ekspor
+          Export
         </Button>
       </div>
 
@@ -156,11 +156,11 @@ export default function ActivityLogsPage() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Cari</label>
+              <label className="text-sm font-medium">Search</label>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cari activity..."
+                  placeholder="Search Activity..."
                   value={filters.search || ""}
                   onChange={(e) => handleFilterChange("search", e.target.value)}
                   className="pl-8"
@@ -176,7 +176,7 @@ export default function ActivityLogsPage() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Semua Event" />
+                  <SelectValue placeholder="All Events" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="created">Created</SelectItem>
@@ -191,12 +191,12 @@ export default function ActivityLogsPage() {
                   className="h-auto p-1 text-xs"
                   onClick={() => handleFilterChange("event", undefined)}
                 >
-                  Hapus filter
+                  Clear filter
                 </Button>
               )}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Tanggal Mulai</label>
+              <label className="text-sm font-medium">Start Date</label>
               <Input
                 type="date"
                 value={filters.start_date || ""}
@@ -206,7 +206,7 @@ export default function ActivityLogsPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Tanggal Akhir</label>
+              <label className="text-sm font-medium">End Date</label>
               <Input
                 type="date"
                 value={filters.end_date || ""}
@@ -222,20 +222,20 @@ export default function ActivityLogsPage() {
       {/* Activity Logs Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Daftar Activity Log</CardTitle>
-          <CardDescription>
-            Menampilkan {logs.length} dari {pagination.total} log
+              <CardTitle>Activity Log List</CardTitle>
+              <CardDescription>
+                Showing {logs.length} of {pagination.total} logs
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center min-h-[400px]">
-              <div className="text-muted-foreground">Memuat data...</div>
+              <div className="text-muted-foreground">Loading Data...</div>
             </div>
           ) : logs.length === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Tidak ada activity log ditemukan</p>
+              <p className="text-muted-foreground">Activity Log not found</p>
             </div>
           ) : (
             <>
@@ -245,10 +245,10 @@ export default function ActivityLogsPage() {
                     <TableHead>ID</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Event</TableHead>
-                    <TableHead>Perubahan</TableHead>
+                    <TableHead>Changes</TableHead>
                     <TableHead>Causer</TableHead>
                     <TableHead>Subject</TableHead>
-                    <TableHead>Tanggal</TableHead>
+                    <TableHead>Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -284,7 +284,7 @@ export default function ActivityLogsPage() {
                                       <span className="text-muted-foreground text-xs">→</span>
                                     </>
                                   ) : (
-                                    <span className="text-muted-foreground text-xs">(baru)</span>
+                                    <span className="text-muted-foreground text-xs">(new)</span>
                                   )}
                                   <span className="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 px-1.5 py-0.5 rounded text-xs font-medium">
                                     {change.new}
@@ -303,7 +303,7 @@ export default function ActivityLogsPage() {
                                 }}
                               >
                                 <Eye className="h-3 w-3 mr-1" />
-                                Lihat {log.changes.length - 2} perubahan lainnya
+                                see {log.changes.length - 2} other changes
                               </Button>
                             )}
                             {log.changes.length <= 2 && (
@@ -323,14 +323,14 @@ export default function ActivityLogsPage() {
                           </div>
                         ) : log.event === 'deleted' ? (
                           <span className="text-xs text-red-600 bg-red-50 dark:bg-red-950 px-2 py-1 rounded">
-                            Dihapus
+                            Deleted
                           </span>
                         ) : log.event === 'created' ? (
                           <span className="text-xs text-green-600 bg-green-50 dark:bg-green-950 px-2 py-1 rounded">
-                            Dibuat
+                            Created
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">Tidak ada perubahan</span>
+                          <span className="text-xs text-muted-foreground">No Changes</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -375,7 +375,7 @@ export default function ActivityLogsPage() {
               {pagination.last_page > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-muted-foreground">
-                    Halaman {pagination.current_page} dari {pagination.last_page}
+                    Page {pagination.current_page} from {pagination.last_page}
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -386,7 +386,7 @@ export default function ActivityLogsPage() {
                       }
                       disabled={pagination.current_page === 1}
                     >
-                      Sebelumnya
+                      Back
                     </Button>
                     <Button
                       variant="outline"
@@ -396,7 +396,7 @@ export default function ActivityLogsPage() {
                       }
                       disabled={pagination.current_page === pagination.last_page}
                     >
-                      Selanjutnya
+                      Next
                     </Button>
                   </div>
                 </div>
@@ -410,9 +410,9 @@ export default function ActivityLogsPage() {
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Detail Perubahan</DialogTitle>
+            <DialogTitle>Changes Detail</DialogTitle>
             <DialogDescription>
-              {selectedLog?.description || "Perubahan yang dilakukan"}
+              {selectedLog?.description || "Changes made"}
             </DialogDescription>
           </DialogHeader>
           {selectedLog && selectedLog.changes && selectedLog.changes.length > 0 ? (
@@ -424,16 +424,16 @@ export default function ActivityLogsPage() {
                     {change.old !== null ? (
                       <>
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground mb-1">Nilai Lama:</p>
+                          <p className="text-xs text-muted-foreground mb-1">Old Value:</p>
                           <div className="line-through text-red-600 bg-red-50 dark:bg-red-950 px-3 py-2 rounded">
-                            {change.old || "(kosong)"}
+                            {change.old || "(empty)"}
                           </div>
                         </div>
                         <span className="text-2xl text-muted-foreground">→</span>
                         <div className="flex-1">
-                          <p className="text-xs text-muted-foreground mb-1">Nilai Baru:</p>
+                          <p className="text-xs text-muted-foreground mb-1">New Value:</p>
                           <div className="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 px-3 py-2 rounded font-medium">
-                            {change.new || "(kosong)"}
+                            {change.new || "(empty)"}
                           </div>
                         </div>
                       </>
@@ -451,7 +451,7 @@ export default function ActivityLogsPage() {
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-8">
-              Tidak ada perubahan untuk ditampilkan
+              There is no changes
             </p>
           )}
         </DialogContent>

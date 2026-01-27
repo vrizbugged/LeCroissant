@@ -12,7 +12,6 @@ import { Navbar } from "@/components/navbar/navbar"
 import { useCart } from "@/contexts/cart-context"
 import { toast } from "sonner"
 
-const MIN_PURCHASE_QUANTITY = 10
 
 export default function CartPage() {
   const router = useRouter()
@@ -50,11 +49,11 @@ export default function CartPage() {
         <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Login Diperlukan</DialogTitle>
-              <DialogDescription>Silakan login untuk melihat keranjang.</DialogDescription>
+              <DialogTitle>Login Required</DialogTitle>
+              <DialogDescription>Please login to view your cart.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => router.push("/")}>Batal</Button>
+              <Button variant="outline" onClick={() => router.push("/")}>Cancel</Button>
               <Button onClick={() => { setShowLoginDialog(false); router.push("/login"); }}>Login</Button>
             </DialogFooter>
           </DialogContent>
@@ -70,16 +69,16 @@ export default function CartPage() {
       <div className="container mx-auto px-4 py-8 pt-24 md:pt-28">
         <div className="flex flex-col gap-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Keranjang Belanja</h1>
-            <p className="text-muted-foreground mt-1">Review produk yang akan Anda pesan</p>
+            <h1 className="text-3xl font-bold tracking-tight">My Cart</h1>
+            <p className="text-muted-foreground mt-1">Review products you will order</p>
           </div>
 
           {items.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <ShoppingCartIcon className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
-                <p className="text-lg font-medium text-muted-foreground">Keranjang Anda kosong</p>
-                <Button className="mt-6" onClick={() => router.push("/shop")}>Mulai Berbelanja</Button>
+                <p className="text-lg font-medium text-muted-foreground">Your cart is empty</p>
+                <Button className="mt-6" onClick={() => router.push("/shop")}>Start Shopping</Button>
               </CardContent>
             </Card>
           ) : (
@@ -144,14 +143,15 @@ export default function CartPage() {
                                     size="icon" 
                                     className="h-8 w-8" 
                                     onClick={() => {
+                                      const minOrder = item.product.min_order || 10
                                       const newQuantity = item.quantity - 1
-                                      if (newQuantity < MIN_PURCHASE_QUANTITY) {
-                                        toast.warning(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit`)
+                                      if (newQuantity < minOrder) {
+                                        toast.warning(`Minimal pembelian adalah ${minOrder} unit`)
                                         return
                                       }
                                       updateQuantity(item.product.id, newQuantity)
                                     }}
-                                    disabled={item.quantity <= MIN_PURCHASE_QUANTITY}
+                                    disabled={item.quantity <= (item.product.min_order || 10)}
                                   >
                                     <MinusIcon className="h-4 w-4" />
                                   </Button>
@@ -161,7 +161,6 @@ export default function CartPage() {
                                     size="icon" 
                                     className="h-8 w-8" 
                                     onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                    disabled={item.quantity >= item.product.ketersediaan_stok}
                                   >
                                     <PlusIcon className="h-4 w-4" />
                                   </Button>
@@ -170,9 +169,6 @@ export default function CartPage() {
                                   <p className="text-lg font-bold">
                                     {formatPrice((item.product.harga_grosir || 0) * item.quantity)}
                                   </p>
-                                  <Badge variant="outline" className="text-xs">
-                                    Stok: {item.product.ketersediaan_stok || 0}
-                                  </Badge>
                                 </div>
                               </div>
                             </div>
@@ -187,7 +183,7 @@ export default function CartPage() {
               {/* RINGKASAN ORDER */}
               <div className="lg:col-span-1">
                 <Card className="sticky top-24">
-                  <CardHeader><CardTitle>Ringkasan Pesanan</CardTitle></CardHeader>
+                  <CardHeader><CardTitle>Order Summary</CardTitle></CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
@@ -205,7 +201,7 @@ export default function CartPage() {
                       <Button onClick={() => router.push("/checkout")} className="w-full bg-orange-600 hover:bg-orange-700 text-white" size="lg">
                         Checkout
                       </Button>
-                      <Button onClick={clearCart} variant="outline" className="w-full">Hapus Semua</Button>
+                      <Button onClick={clearCart} variant="outline" className="w-full">Clear All</Button>
                     </div>
                   </CardContent>
                 </Card>

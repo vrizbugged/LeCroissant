@@ -39,7 +39,7 @@ export function Footer() {
                 <Facebook className="h-5 w-5" />
               </a>
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/le.croissant.bali/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
@@ -109,8 +109,8 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Jl. Contoh No. 123<br />
-                  Jakarta, Indonesia 12345
+                  Jl. Danau Tamblingan No.47 <br />
+                  Sanur, Denpasar Selatan, Kota Denpasar, Bali 80228
                 </span>
               </li>
               <li className="flex items-center gap-3">
@@ -119,7 +119,7 @@ export function Footer() {
                   href="tel:+6281234567890"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                 >
-                  +62 812 3456 7890
+                  +62 822-4764-4041
                 </a>
               </li>
               <li className="flex items-center gap-3">

@@ -59,14 +59,14 @@ import { toast } from "sonner"
 
 // --- UPDATE SCHEMA ---
 const clientFormSchema = z.object({
-  name: z.string().min(1, "Nama wajib diisi"),
-  email: z.string().email("Email tidak valid"),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email"),
   phone_number: z.string().optional(),
   company_name: z.string().optional(),
   business_sector: z.string().optional(),
   address: z.string().optional(),
   // Field status WAJIB ada agar lolos validasi dan dikirim ke backend
-  status: z.string().min(1, "Status wajib dipilih"), 
+  status: z.string().min(1, "Status must be selected"), 
 })
 
 interface ClientManagementProps {
@@ -123,30 +123,30 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
         const updated = await clientsApi.update(editingClient.id, data)
         if (updated) {
           setClients(clients.map(c => c.id === editingClient.id ? updated : c))
-          toast.success("Data klien berhasil diperbarui")
+          toast.success("Client data updated successfully")
         } else {
-          toast.error("Gagal memperbarui data klien")
+          toast.error("Failed to update client data")
         }
       } else {
         const created = await clientsApi.create(data)
         if (created) {
           setClients([...clients, created])
-          toast.success("Klien berhasil ditambahkan")
+          toast.success("Client added successfully")
         } else {
-          toast.error("Gagal menambahkan klien")
+          toast.error("Failed to add client")
         }
       }
       setIsDialogOpen(false)
       setEditingClient(null)
       router.refresh()
     } catch (error) {
-      toast.error("Terjadi kesalahan")
+      toast.error("An error occurred")
       console.error(error)
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus klien ini?")) {
+    if (!confirm("Are you sure you want to delete this client?")) {
       return
     }
 
@@ -154,13 +154,13 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
       const success = await clientsApi.delete(id)
       if (success) {
         setClients(clients.filter(c => c.id !== id))
-        toast.success("Klien berhasil dihapus")
+        toast.success("Client deleted successfully")
         router.refresh()
       } else {
-        toast.error("Gagal menghapus klien")
+        toast.error("Failed to delete client")
       }
     } catch (error) {
-      toast.error("Terjadi kesalahan")
+      toast.error("An error occurred")
       console.error(error)
     }
   }
@@ -170,13 +170,13 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
       const verified = await clientsApi.verify(id)
       if (verified) {
         setClients(clients.map(c => c.id === id ? verified : c))
-        toast.success("Akun klien berhasil diverifikasi")
+        toast.success("Client account verified successfully")
         router.refresh()
       } else {
-        toast.error("Gagal memverifikasi klien")
+        toast.error("Failed to verify client")
       }
     } catch (error) {
-      toast.error("Terjadi kesalahan")
+      toast.error("An error occurred")
       console.error(error)
     }
   }
@@ -212,11 +212,11 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
         className: "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800",
       },
       Aktif: {
-        label: "Aktif",
+        label: "Active",
         className: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
       },
       "Non Aktif": {
-        label: "Non Aktif",
+        label: "Inactive",
         className: "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
       },
     }
@@ -239,25 +239,25 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Manajemen Data Klien B2B</CardTitle>
-              <CardDescription>Kelola data klien dan verifikasi akun</CardDescription>
+              <CardTitle>Client Management</CardTitle>
+              <CardDescription>Manage client data and verify account</CardDescription>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={handleAdd}>
                   <PlusIcon className="mr-2 h-4 w-4" />
-                  Tambah Klien
+                  Add Client
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>
-                    {editingClient ? "Edit Klien" : "Tambah Klien Baru"}
+                    {editingClient ? "Edit Client" : "Add New Client"}
                   </DialogTitle>
                   <DialogDescription>
                     {editingClient
-                      ? "Perbarui informasi klien"
-                      : "Tambahkan klien baru ke sistem"}
+                      ? "Update client information"
+                      : "Add new client to system"}
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -268,9 +268,9 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nama</FormLabel>
+                            <FormLabel>Name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Nama lengkap" {...field} />
+                              <Input placeholder="Name" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -295,7 +295,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                       name="phone_number"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nomor Telepon</FormLabel>
+                          <FormLabel>Phone Number</FormLabel>
                           <FormControl>
                             <Input placeholder="081234567890" {...field} />
                           </FormControl>
@@ -308,9 +308,9 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                       name="company_name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nama Perusahaan</FormLabel>
+                          <FormLabel>Company Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="Nama perusahaan" {...field} />
+                            <Input placeholder="Company Name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -321,10 +321,10 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                       name="business_sector"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Sektor Bisnis</FormLabel>
+                          <FormLabel>Business Sector</FormLabel>
                           <FormControl>
                               {/* Bisa diganti Select jika mau fix option */}
-                              <Input placeholder="Hotel, Restoran, dll" {...field} />
+                              <Input placeholder="Hotel, Restaurant, etc." {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -335,9 +335,9 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                       name="address"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Alamat</FormLabel>
+                          <FormLabel>Address</FormLabel>
                           <FormControl>
-                            <Input placeholder="Alamat lengkap" {...field} />
+                            <Input placeholder="Full Address" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -354,13 +354,13 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Pilih status" />
+                                <SelectValue placeholder="Select Status" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="Pending">Pending</SelectItem>
-                              <SelectItem value="Aktif">Aktif</SelectItem>
-                              <SelectItem value="Non Aktif">Non Aktif</SelectItem>
+                              <SelectItem value="Active">Active</SelectItem>
+                              <SelectItem value="Inactive">Inactive</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -378,10 +378,10 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                           setEditingClient(null)
                         }}
                       >
-                        Batal
+                        Cancel
                       </Button>
                       <Button type="submit">
-                        {editingClient ? "Perbarui" : "Tambah"}
+                        {editingClient ? "Update" : "Add"}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -397,20 +397,20 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12"></TableHead>
-                  <TableHead>Nama</TableHead>
+                  <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Perusahaan</TableHead>
-                  <TableHead>Sektor</TableHead>
+                  <TableHead>Company Name</TableHead>
+                  <TableHead>Business Sector</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Total Pesanan</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
+                  <TableHead>Total Orders</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {clients.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Belum ada data klien
+                      No Data Client
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -448,7 +448,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                                <DropdownMenuLabel>Action</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleEdit(client)}>
                                   <PencilIcon className="mr-2 h-4 w-4" />
@@ -457,7 +457,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                                 {client.status === "Pending" && (
                                   <DropdownMenuItem onClick={() => handleVerify(client.id)}>
                                     <CheckCircle2Icon className="mr-2 h-4 w-4" />
-                                    Verifikasi
+                                    Verify
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuSeparator />
@@ -466,7 +466,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                                   className="text-red-600"
                                 >
                                   <TrashIcon className="mr-2 h-4 w-4" />
-                                  Hapus
+                                  Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -483,7 +483,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                                       <Phone className="h-4 w-4 text-gray-600" />
                                     </div>
                                     <div className="flex-1">
-                                      <p className="font-semibold text-sm mb-0.5">Nomor Telepon</p>
+                                      <p className="font-semibold text-sm mb-0.5">Phone Number</p>
                                       <p className="text-sm text-muted-foreground">
                                         {client.phone_number}
                                       </p>
@@ -498,7 +498,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                                       <MapPin className="h-4 w-4 text-gray-600" />
                                     </div>
                                     <div className="flex-1">
-                                      <p className="font-semibold text-sm mb-0.5">Alamat</p>
+                                      <p className="font-semibold text-sm mb-0.5">Address</p>
                                       <p className="text-sm text-muted-foreground">
                                         {client.address}
                                       </p>
@@ -512,7 +512,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                                     <span className="text-xs font-bold text-gray-600">ID</span>
                                   </div>
                                   <div className="flex-1">
-                                    <p className="font-semibold text-sm mb-0.5">ID Klien</p>
+                                    <p className="font-semibold text-sm mb-0.5">Client ID</p>
                                     <p className="text-sm text-muted-foreground">
                                       #{client.id}
                                     </p>
@@ -526,7 +526,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                                       <Calendar1 className="h-4 w-4 text-gray-600" /> 
                                     </div>
                                     <div className="flex-1">
-                                      <p className="font-semibold text-sm mb-0.5">Tanggal Dibuat</p>
+                                      <p className="font-semibold text-sm mb-0.5">Date Created</p>
                                       <p className="text-sm text-muted-foreground">
                                         {new Date(client.created_at).toLocaleDateString('id-ID', {
                                           year: 'numeric',
@@ -545,7 +545,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                                       <CalendarArrowUp className="h-4 w-4 text-gray-600" />
                                     </div>
                                     <div className="flex-1">
-                                      <p className="font-semibold text-sm mb-0.5">Terakhir Diperbarui</p>
+                                      <p className="font-semibold text-sm mb-0.5">Last Updated</p>
                                       <p className="text-sm text-muted-foreground">
                                         {new Date(client.updated_at).toLocaleDateString('id-ID', {
                                           year: 'numeric',

@@ -86,13 +86,13 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
       const updated = await ordersApi.updateStatus(orderId, newStatus, cancellationReason)
       if (updated) {
         setOrders(orders.map(o => o.id === orderId ? updated : o))
-        toast.success("Status pesanan berhasil diperbarui")
+        toast.success("Order status updated successfully")
         router.refresh()
       } else {
-        toast.error("Gagal memperbarui status pesanan")
+        toast.error("Failed to update order status")
       }
     } catch (error) {
-      toast.error("Terjadi kesalahan")
+      toast.error("An error occurred")
       console.error(error)
     }
   }
@@ -111,7 +111,7 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
     if (!cancelDialog.orderId) return
     
     if (!cancellationReason.trim()) {
-      toast.error("Alasan pembatalan wajib diisi")
+      toast.error("Cancellation reason is required")
       return
     }
 
@@ -297,10 +297,10 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       {statusFilter 
-                        ? `Tidak ada pesanan dengan status "${statusLabels[statusFilter]}"`
+                        ? `No orders with status "${statusLabels[statusFilter]}"`
                         : orders.length === 0
-                          ? "Belum ada pesanan"
-                          : "Tidak ada pesanan yang sesuai filter"
+                          ? "No orders yet"
+                          : "No orders match the filter"
                       }
                     </TableCell>
                   </TableRow>
@@ -322,7 +322,7 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
                             <span>#{order.id}</span>
                             {isNew && (
                               <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-300 text-xs">
-                                Baru
+                                New
                               </Badge>
                             )}
                           </div>
@@ -391,24 +391,24 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Batalkan Pesanan</DialogTitle>
+            <DialogTitle>Cancel Order</DialogTitle>
             <DialogDescription>
-              Masukkan alasan pembatalan pesanan. Alasan ini akan ditampilkan kepada customer.
+              Enter the reason for order cancellation. This reason will be shown to the customer.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="cancellation-reason">Alasan Pembatalan *</Label>
+              <Label htmlFor="cancellation-reason">Cancellation Reason *</Label>
               <Textarea
                 id="cancellation-reason"
-                placeholder="Contoh: Stok tidak mencukupi, masalah pembayaran, dll."
+                placeholder="Example: Insufficient stock, payment issue, etc."
                 value={cancellationReason}
                 onChange={(e) => setCancellationReason(e.target.value)}
                 rows={4}
                 maxLength={500}
               />
               <p className="text-sm text-muted-foreground">
-                {cancellationReason.length}/500 karakter
+                {cancellationReason.length}/500 characters
               </p>
             </div>
           </div>
@@ -420,10 +420,10 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
                 setCancellationReason("")
               }}
             >
-              Batal
+              Cancel
             </Button>
             <Button onClick={handleCancelConfirm} variant="destructive">
-              Konfirmasi Pembatalan
+              Confirm Cancellation
             </Button>
           </DialogFooter>
         </DialogContent>

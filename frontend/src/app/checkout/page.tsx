@@ -28,8 +28,8 @@ import type { UserResource } from "@/types/api"
 import { toast } from "sonner"
 
 const checkoutFormSchema = z.object({
-  phone_number: z.string().min(1, "Nomor telepon wajib diisi"),
-  address: z.string().min(1, "Alamat wajib diisi"),
+  phone_number: z.string().min(1, "Phone number is required"),
+  address: z.string().min(1, "Address is required"),
   special_notes: z.string().optional(),
   payment_proof: z.union([
     z.instanceof(File),
@@ -48,7 +48,7 @@ const checkoutFormSchema = z.object({
     }
     return true
   }, {
-    message: "Bukti pembayaran wajib diupload. File harus berupa gambar (JPG, PNG) atau PDF, maksimal 5MB",
+    message: "Payment proof must be uploaded. File must be an image (JPG, PNG) or PDF, maximum 5MB",
   }),
 })
 
@@ -178,7 +178,7 @@ export default function CheckoutPage() {
     }
     // Jangan redirect ke cart jika order baru saja berhasil dibuat
     if (items.length === 0 && !orderSuccess) {
-      toast.error("Keranjang masih kosong")
+      toast.error("Cart is still empty")
       router.push("/cart")
       return
     }
@@ -195,34 +195,31 @@ export default function CheckoutPage() {
 
   const onSubmit = async (data: CheckoutFormValues) => {
     if (items.length === 0) {
-      toast.error("Keranjang masih kosong")
+      toast.error("Cart is still empty")
       router.push("/cart")
       return
     }
 
     // Validasi minimal quantity untuk setiap produk
-    const MIN_PURCHASE_QUANTITY = 10
-    const invalidItems = items.filter(item => item.quantity < MIN_PURCHASE_QUANTITY)
+    const invalidItems = items.filter(item => {
+      const minOrder = item.product.min_order || 10
+      return item.quantity < minOrder
+    })
     if (invalidItems.length > 0) {
-      toast.error(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit per produk`)
+      const firstInvalid = invalidItems[0]
+      const minOrder = firstInvalid.product.min_order || 10
+      toast.error(`Minimum purchase is ${minOrder} units per product`)
       router.push("/cart")
       return
     }
 
-    // Validasi stok tersedia
-    const outOfStockItems = items.filter(item => item.quantity > item.product.ketersediaan_stok)
-    if (outOfStockItems.length > 0) {
-      toast.error(`Stok tidak mencukupi untuk beberapa produk`)
-      router.push("/cart")
-      return
-    }
 
     setLoading(true)
     try {
       // Prepare order data
       // payment_proof sekarang required, jadi harus selalu ada
       if (!(data.payment_proof instanceof File)) {
-        toast.error("Bukti pembayaran wajib diupload")
+        toast.error("Payment proof must be uploaded")
         setLoading(false)
         return
       }
@@ -248,18 +245,18 @@ export default function CheckoutPage() {
         clearCart()
         
         // Tampilkan success message
-        toast.success("Pesanan berhasil dibuat!")
+        toast.success("Order created successfully!")
         
         // Redirect ke my-transactions menggunakan window.location untuk hard redirect
         // Ini memastikan redirect terjadi meskipun ada useEffect lain yang mencoba redirect
         window.location.href = '/my-transactions'
       } else {
-        toast.error("Gagal membuat pesanan. Silakan coba lagi.")
+        toast.error("Failed to create order. Please try again.")
       }
     } catch (error) {
       console.error("Error creating order:", error)
       // Tampilkan error sebagai toast, tidak redirect ke cart
-      toast.error(error instanceof Error ? error.message : "Terjadi kesalahan saat membuat pesanan")
+      toast.error(error instanceof Error ? error.message : "An error occurred while creating order")
     } finally {
       setLoading(false)
     }
@@ -270,14 +267,14 @@ export default function CheckoutPage() {
     if (file) {
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("Ukuran file maksimal 5MB")
+        toast.error("Maximum file size is 5MB")
         e.target.value = ''
         return
       }
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
       if (!allowedTypes.includes(file.type)) {
-        toast.error("File harus berupa gambar (JPG, PNG) atau PDF")
+        toast.error("File must be an image (JPG, PNG) or PDF")
         e.target.value = ''
         return
       }
@@ -314,9 +311,9 @@ export default function CheckoutPage() {
   const copyAccountNumber = async () => {
     try {
       await navigator.clipboard.writeText(BANK_INFO.accountNumber)
-      toast.success("Nomor rekening berhasil disalin!")
+      toast.success("Account number copied successfully!")
     } catch (error) {
-      toast.error("Gagal menyalin nomor rekening")
+      toast.error("Failed to copy account number")
     }
   }
 
@@ -377,7 +374,7 @@ export default function CheckoutPage() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Checkout</h1>
               <p className="text-muted-foreground mt-1">
-                Lengkapi informasi kontak dan upload bukti pembayaran untuk menyelesaikan pesanan
+                Complete contact information and upload payment proof to complete your order
               </p>
             </div>
           </div>
@@ -391,7 +388,7 @@ export default function CheckoutPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        Informasi Kontak
+                        Contact Information
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -402,7 +399,7 @@ export default function CheckoutPage() {
                           <FormItem>
                             <FormLabel className="flex items-center gap-2">
                               <PhoneIcon className="h-4 w-4 text-orange-600" />
-                              Nomor Telepon
+                              Phone Number
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -413,7 +410,7 @@ export default function CheckoutPage() {
                               />
                             </FormControl>
                             <FormDescription>
-                              Nomor telepon yang dapat dihubungi
+                              Contactable phone number
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -431,14 +428,14 @@ export default function CheckoutPage() {
                             </FormLabel>
                             <FormControl>
                               <Textarea
-                                placeholder="Masukkan alamat lengkap"
+                                placeholder="Enter full address"
                                 rows={4}
                                 {...field}
                                 disabled={loadingUser}
                               />
                             </FormControl>
                             <FormDescription>
-                              Alamat lengkap Anda (dapat diedit jika perlu)
+                              Your full address (can be edited if needed)
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -450,16 +447,16 @@ export default function CheckoutPage() {
                         name="special_notes"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Catatan Khusus (Opsional)</FormLabel>
+                            <FormLabel>Special Notes (Optional)</FormLabel>
                             <FormControl>
                               <Textarea
-                                placeholder="Catatan tambahan untuk pesanan Anda..."
+                                placeholder="Additional notes for your order..."
                                 rows={3}
                                 {...field}
                               />
                             </FormControl>
                             <FormDescription>
-                              Tambahkan catatan khusus jika diperlukan
+                              Add special notes if needed
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -472,7 +469,7 @@ export default function CheckoutPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        Upload Bukti Pembayaran
+                        Upload Payment Proof
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">

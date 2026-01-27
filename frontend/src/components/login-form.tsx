@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import Link from "next/link"
-
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -23,8 +23,8 @@ import { authApi } from "@/lib/api"
 import { toast } from "sonner"
 
 const loginFormSchema = z.object({
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(1, "Password wajib diisi"),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(1, "Password is required"),
 })
 
 type LoginFormValues = z.infer<typeof loginFormSchema>
@@ -65,7 +65,7 @@ export function LoginForm({
           localStorage.setItem("user", JSON.stringify(user))
         }
 
-        toast.success("Login berhasil!")
+        toast.success("Login successful!")
 
         // Dispatch event untuk cart context agar cart di-reload
         window.dispatchEvent(new Event("authChanged"))
@@ -87,18 +87,18 @@ export function LoginForm({
       } else {
         // Jika login sukses tapi token tidak ditemukan di response
         console.error("Token missing in response:", result)
-        toast.error("Terjadi kesalahan sistem: Token tidak ditemukan")
+        toast.error("System error: Token not found")
       }
     } catch (error) {
       console.error("Error logging in:", error)
-      let errorMessage = "Terjadi kesalahan saat login"
+      let errorMessage = "An error occurred during login"
       
       if (error instanceof Error) {
         // Cek apakah ini network error
         if (error.message.includes('Failed to fetch') || error.message.includes('Network')) {
-          errorMessage = "Tidak dapat terhubung ke server. Pastikan backend berjalan di http://127.0.0.1:8000"
+          errorMessage = "Cannot connect to server. Make sure backend is running at http://127.0.0.1:8000"
         } else if (error.message.includes('Invalid credentials')) {
-          errorMessage = "Email atau password salah"
+          errorMessage = "Invalid email or password"
         } else {
           errorMessage = error.message
         }
@@ -155,7 +155,7 @@ export function LoginForm({
                             href="#"
                             className="ml-auto text-sm underline-offset-2 hover:underline"
                           >
-                            Forgot your password?
+                            {/* Forgot your password? */}
                           </a>
                         </div>
                         <FormControl>
@@ -174,8 +174,8 @@ export function LoginForm({
                     Or continue with
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  {/* ... (Bagian Social Login tetap sama) ... */}
+                {/* <div className="grid grid-cols-3 gap-4">
+                  ... (Bagian Social Login tetap sama) ...
                   <Button variant="outline" type="button" className="w-full">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path
@@ -203,7 +203,7 @@ export function LoginForm({
                     </svg>
                     <span className="sr-only">Login with Meta</span>
                   </Button>
-                </div>
+                </div> */}
                 <div className="text-center text-sm">
                   Don&apos;t have an account?{" "}
                   <Link href="/signup" className="underline underline-offset-4">
@@ -214,9 +214,11 @@ export function LoginForm({
             </form>
           </Form>
           <div className="relative hidden bg-muted md:block">
-            <img
-              src="/placeholder.svg"
-              alt="Image"
+            <Image
+              src="/image/pain_au.png"
+              alt="Pain au Chocolat"
+              width={500}
+              height={500}
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
             />
           </div>

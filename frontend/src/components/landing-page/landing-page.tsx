@@ -20,6 +20,39 @@ export function LandingPage() {
   const heroY = useTransform(scrollY, [0, 500], [0, 150])
   const heroOpacity = useTransform(scrollY, [0, 300], [1, 0])
 
+  // Handle hash navigation to scroll to section
+  React.useEffect(() => {
+    const handleHashScroll = () => {
+      const hash = window.location.hash
+      if (hash === '#about-us') {
+        // Small delay to ensure page is fully rendered
+        setTimeout(() => {
+          const element = document.getElementById('about-us')
+          if (element) {
+            const offset = 100 // Account for fixed navbar
+            const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+            const offsetPosition = elementPosition - offset
+            
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            })
+          }
+        }, 100)
+      }
+    }
+    
+    // Handle initial hash
+    handleHashScroll()
+    
+    // Handle hash changes (e.g., when navigating from another page)
+    window.addEventListener('hashchange', handleHashScroll)
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashScroll)
+    }
+  }, [])
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -158,9 +191,7 @@ export function LandingPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Button size="lg" variant="outline" className="text-lg border-orange-500 text-orange-600 hover:bg-orange-50 hover:border-orange-600 transition-all duration-300">
-                    Learn More
-                  </Button>
+                  
                 </motion.div>
               </motion.div>
             </motion.div>
@@ -176,12 +207,12 @@ export function LandingPage() {
       <Separator />
 
       {/* Features Section */}
-      <section className="container mx-auto px-4 py-20">
+      <section id="about-us" className="container mx-auto px-4 py-20 scroll-mt-24">
         <div className="mx-auto max-w-6xl">
           <ScrollReveal>
             <div className="mb-12 text-center">
               <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
-                Why Choose Us?
+                About Us
               </h2>
               <p className="text-lg text-muted-foreground">
                 Everything you need to scale up your business
@@ -278,7 +309,7 @@ export function LandingPage() {
       <Separator />
 
       {/* How to Order Section */}
-      <section className="container mx-auto px-4 py-20 bg-gradient-to-b from-background to-muted/30">
+      <section id="how-to-order" className="container mx-auto px-4 py-20 bg-gradient-to-b from-background to-muted/30 scroll-mt-24">
         <div className="mx-auto max-w-6xl">
           <ScrollReveal>
             <div className="mb-12 text-center">
@@ -428,7 +459,7 @@ export function LandingPage() {
       <Separator />
 
       {/* Location Section */}
-      <section className="container mx-auto px-4 py-20">
+      <section id="visit-us" className="container mx-auto px-4 py-20 scroll-mt-24">
         <div className="mx-auto max-w-6xl">
           <ScrollReveal>
             <div className="mb-12 text-center">
@@ -522,7 +553,7 @@ export function LandingPage() {
                         Le Croissant Sanur
                       </p>
                       <p className="text-muted-foreground text-sm">
-                        Sanur, Bali, Indonesia
+                      Jl. Danau Tamblingan No.47, Sanur, Denpasar Selatan, Kota Denpasar, Bali 80228
                       </p>
                     </div>
                   </div>
@@ -550,8 +581,13 @@ export function LandingPage() {
                     </div>
                     <div className="flex-1">
                       <p className="font-semibold text-sm mb-0.5">Phone</p>
-                      <a href="tel:+62XXXXXXXXXX" className="text-orange-600 hover:text-orange-700 hover:underline text-sm">
-                        +62 XXX XXX XXXX
+                      <a 
+                      href="https://api.whatsapp.com/send/?phone=6282247644041&text&type=phone_number&app_absent=0"
+                      className="text-orange-600 hover:text-orange-700 hover:underline text-sm"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >
+                        +62 822-4764-4041
                       </a>
                     </div>
                   </div>
@@ -665,8 +701,15 @@ export function LandingPage() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Button size="lg" variant="outline" className="text-lg border-2 hover:border-orange-500 hover:text-orange-600 transition-all duration-300">
-                        Contact Sales
+                      <Button 
+                      size="lg" variant="outline" className="text-lg border-2 hover:border-orange-500 hover:text-orange-600 transition-all duration-300">
+                        <Link 
+                          href="https://api.whatsapp.com/send/?phone=6282247644041&text&type=phone_number&app_absent=0" 
+                          target="_blank"            
+                          rel="noopener noreferrer"   
+                        >
+                          Contact Sales
+                        </Link>
                       </Button>
                     </motion.div>
                   </div>

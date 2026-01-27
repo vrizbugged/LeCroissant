@@ -188,7 +188,7 @@ export default function MyTransactionsPage() {
               <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                 <AlertCircle className="h-12 w-12 text-destructive" />
                 <div className="text-destructive text-center">{error}</div>
-                <Button onClick={() => fetchMyOrders()}>Coba Lagi</Button>
+                <Button onClick={() => fetchMyOrders()}>Try Again</Button>
               </div>
             </CardContent>
           </Card>
@@ -202,9 +202,9 @@ export default function MyTransactionsPage() {
       <Navbar />
       <div className="container mx-auto px-4 py-8 pt-24 md:pt-28">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Transaksi Saya</h1>
+          <h1 className="text-3xl font-bold mb-2">My Transactions</h1>
           <p className="text-muted-foreground">
-            Lacak status pesanan dan lihat histori transaksi Anda
+            Track order status and view your transaction history
           </p>
         </div>
 
@@ -214,12 +214,12 @@ export default function MyTransactionsPage() {
               <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                 <Receipt className="h-16 w-16 text-muted-foreground" />
                 <div className="text-center">
-                  <h3 className="text-lg font-semibold mb-2">Belum Ada Transaksi</h3>
+                  <h3 className="text-lg font-semibold mb-2">No Orders Yet</h3>
                   <p className="text-muted-foreground mb-4">
-                    Anda belum melakukan pemesanan. Mulai berbelanja untuk melihat transaksi di sini.
+                    You haven't made any orders. Start shopping to see transactions here.
                   </p>
                   <Button onClick={() => router.push("/shop")} className="bg-orange-600 hover:bg-orange-700 text-white">
-                    Mulai Berbelanja
+                    Start Shopping
                   </Button>
                 </div>
               </div>
@@ -233,12 +233,12 @@ export default function MyTransactionsPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle>Status Pesanan Terbaru</CardTitle>
+                      <CardTitle>New Order Status</CardTitle>
                       <CardDescription>
                         Nomor Order: <span className="font-semibold text-foreground">#{latestOrder.id}</span>
                         {latestOrder.status === 'dibatalkan' && (
                           <Badge className="ml-2 bg-red-500/10 text-red-600 dark:text-red-400">
-                            Dibatalkan
+                            Cancelled
                           </Badge>
                         )}
                       </CardDescription>
@@ -323,17 +323,17 @@ export default function MyTransactionsPage() {
                   {/* Order Info */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
                     <div>
-                      <p className="text-sm text-muted-foreground">Total Harga</p>
+                      <p className="text-sm text-muted-foreground">Total Price</p>
                       <p className="text-xl font-bold text-orange-600">
                         {formatCurrency(latestOrder.total_price)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Tanggal Pemesanan</p>
+                      <p className="text-sm text-muted-foreground">Order Date</p>
                       <p className="font-medium">{formatDate(latestOrder.created_at)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Jumlah Item</p>
+                      <p className="text-sm text-muted-foreground">Total Items</p>
                       <p className="font-medium">
                         {latestOrder.products?.reduce((sum, p) => sum + p.pivot.quantity, 0) || 0} unit
                       </p>
@@ -348,7 +348,7 @@ export default function MyTransactionsPage() {
                           <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
                           <div className="flex-1">
                             <h4 className="font-semibold text-red-900 dark:text-red-400 mb-1">
-                              Alasan Pembatalan
+                              Cancellation Reason
                             </h4>
                             <p className="text-sm text-red-800 dark:text-red-300">
                               {latestOrder.cancellation_reason}
@@ -367,7 +367,7 @@ export default function MyTransactionsPage() {
                         className="bg-gray-400 text-white cursor-not-allowed"
                       >
                         <Printer className="h-4 w-4 mr-2" />
-                        Invoice Tidak Dapat Dicetak
+                        Invoice Cannot Be Printed
                       </Button>
                     ) : (
                       <Button
@@ -375,7 +375,7 @@ export default function MyTransactionsPage() {
                         className="bg-orange-600 hover:bg-orange-700 text-white"
                       >
                         <Printer className="h-4 w-4 mr-2" />
-                        Cetak Invoice
+                        Print Invoice
                       </Button>
                     )}
                   </div>
@@ -383,7 +383,7 @@ export default function MyTransactionsPage() {
                   {/* Detail Produk Pesanan Terbaru - Collapsible */}
                   {latestOrder.products && latestOrder.products.length > 0 && isOrderExpanded(latestOrder.id) && (
                     <div className="pt-4 border-t">
-                      <h4 className="font-semibold mb-3">Detail Produk</h4>
+                      <h4 className="font-semibold mb-3">Product Details</h4>
                       <div className="space-y-2">
                         {latestOrder.products.map((product) => (
                           <div key={product.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
@@ -417,7 +417,7 @@ export default function MyTransactionsPage() {
             {/* Section 2: Histori Transaksi */}
             {orders.length > 1 && (
               <div>
-                <h2 className="text-2xl font-bold mb-4">Histori Transaksi</h2>
+                <h2 className="text-2xl font-bold mb-4">Transaction History</h2>
                 <div className="space-y-4">
                   {orders.slice(1).map((order) => (
                   <Card key={order.id} className="overflow-hidden">
@@ -427,7 +427,7 @@ export default function MyTransactionsPage() {
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-lg flex items-center gap-2">
                               <Receipt className="h-5 w-5" />
-                              Pesanan #{order.id}
+                              Order #{order.id}
                             </CardTitle>
                             <Button
                               variant="ghost"
@@ -458,7 +458,7 @@ export default function MyTransactionsPage() {
                           <div className="flex items-center gap-2">
                             <Package className="h-4 w-4 text-muted-foreground" />
                             <div>
-                              <div className="text-sm text-muted-foreground">Jumlah Item</div>
+                              <div className="text-sm text-muted-foreground">Total Items</div>
                               <div className="font-medium">
                                 {order.products?.reduce((sum, p) => sum + p.pivot.quantity, 0) || 0} unit
                               </div>
@@ -467,14 +467,14 @@ export default function MyTransactionsPage() {
                           <div className="flex items-center gap-2">
                             <DollarSign className="h-4 w-4 text-muted-foreground" />
                             <div>
-                              <div className="text-sm text-muted-foreground">Total Harga</div>
+                              <div className="text-sm text-muted-foreground">Total Price</div>
                               <div className="font-medium text-lg text-orange-600">{formatCurrency(order.total_price)}</div>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <div>
-                              <div className="text-sm text-muted-foreground">Tanggal</div>
+                              <div className="text-sm text-muted-foreground">Order Date</div>
                               <div className="font-medium">{formatDate(order.created_at)}</div>
                             </div>
                           </div>
@@ -483,15 +483,15 @@ export default function MyTransactionsPage() {
                         {/* Order Items - Collapsible */}
                         {order.products && order.products.length > 0 && isOrderExpanded(order.id) && (
                           <div>
-                            <h4 className="font-semibold mb-3">Detail Produk</h4>
+                            <h4 className="font-semibold mb-3">Product Details</h4>
                             <div className="border rounded-lg overflow-hidden">
                               <Table>
                                 <TableHeader>
                                   <TableRow>
-                                    <TableHead>Produk</TableHead>
-                                    <TableHead>Jumlah</TableHead>
-                                    <TableHead className="text-right">Harga Satuan</TableHead>
-                                    <TableHead className="text-right">Subtotal</TableHead>
+                                    <TableHead>Product</TableHead>
+                                    <TableHead>Quantity</TableHead>
+                                    <TableHead className="text-right">Unit Price</TableHead>
+                                    <TableHead className="text-right">Subtotal Price</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -540,7 +540,7 @@ export default function MyTransactionsPage() {
                               <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
                               <div className="flex-1">
                                 <h4 className="font-semibold text-red-900 dark:text-red-400 mb-1">
-                                  Alasan Pembatalan
+                                  Cancellation Reason
                                 </h4>
                                 <p className="text-sm text-red-800 dark:text-red-300">
                                   {order.cancellation_reason}
@@ -553,7 +553,7 @@ export default function MyTransactionsPage() {
                         {/* Special Notes - Collapsible */}
                         {order.special_notes && isOrderExpanded(order.id) && (
                           <div className="bg-muted/50 p-3 rounded-lg">
-                            <div className="text-sm font-medium mb-1">Catatan Khusus:</div>
+                            <div className="text-sm font-medium mb-1">Special Notes:</div>
                             <div className="text-sm text-muted-foreground">{order.special_notes}</div>
                           </div>
                         )}
@@ -567,7 +567,7 @@ export default function MyTransactionsPage() {
                               className="w-full sm:w-auto bg-gray-400 text-white cursor-not-allowed"
                             >
                               <Printer className="h-4 w-4 mr-2" />
-                              Invoice Tidak Dapat Dicetak
+                              Invoice Cannot Be Printed
                             </Button>
                           ) : (
                             <Button
@@ -576,7 +576,7 @@ export default function MyTransactionsPage() {
                               className="w-full sm:w-auto"
                             >
                               <Printer className="h-4 w-4 mr-2" />
-                              Cetak Invoice
+                              Print Invoice
                             </Button>
                           )}
                         </div>

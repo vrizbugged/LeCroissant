@@ -14,7 +14,6 @@ import { ScrollReveal } from "@/components/ui/scroll-reveal"
 import { useCart } from "@/contexts/cart-context"
 import { toast } from "sonner"
 
-const MIN_PURCHASE_QUANTITY = 10
 
 export function MostOrderedShowcase() {
   const [products, setProducts] = React.useState<ProductResource[]>([])
@@ -33,8 +32,7 @@ export function MostOrderedShowcase() {
           data.forEach((product, idx) => {
             console.log(`Product ${idx + 1} (${product.nama_produk}):`, {
               image_url: product.image_url,
-              gambar_url: product.gambar_url,
-              hasImage: !!(product.image_url || product.gambar_url)
+              hasImage: !!product.image_url
             })
           })
           setProducts(data)
@@ -84,7 +82,7 @@ export function MostOrderedShowcase() {
       scale: 1,
       transition: {
         duration: 0.5,
-        ease: [0.21, 1.11, 0.81, 0.99],
+        ease: "easeOut" as const,
       },
     },
   }
@@ -148,9 +146,9 @@ export function MostOrderedShowcase() {
                   <CardContent className="p-0">
                     {/* Image Container */}
                     <div className="relative h-64 w-full overflow-hidden bg-muted">
-                      {(product.image_url || product.gambar_url) ? (
+                      {product.image_url ? (
                         <img
-                          src={product.image_url || product.gambar_url || ""}
+                          src={product.image_url}
                           alt={product.nama_produk}
                           className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
                             hoveredIndex === index ? "scale-110" : "scale-100"
@@ -206,19 +204,11 @@ export function MostOrderedShowcase() {
                         {product.deskripsi}
                       </p>
 
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <p className="text-2xl font-bold text-orange-600">
-                            {product.harga_formatted}
-                          </p>
-                          <p className="text-xs text-muted-foreground">per unit</p>
-                        </div>
-                        <Badge
-                          variant="secondary"
-                          className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                        >
-                          Stok: {product.ketersediaan_stok}
-                        </Badge>
+                      <div className="mb-4">
+                        <p className="text-2xl font-bold text-orange-600">
+                          {product.harga_formatted}
+                        </p>
+                        <p className="text-xs text-muted-foreground">per unit</p>
                       </div>
 
                       <Button
@@ -233,8 +223,9 @@ export function MostOrderedShowcase() {
                           }
 
                           // Add to cart with minimum quantity
-                          addItem(product, MIN_PURCHASE_QUANTITY)
-                          toast.success(`${product.nama_produk} ditambahkan ke keranjang (${MIN_PURCHASE_QUANTITY} unit)`)
+                          const minOrder = product.min_order || 10
+                          addItem(product, minOrder)
+                          toast.success(`${product.nama_produk} ditambahkan ke keranjang (${minOrder} unit)`)
                         }}
                       >
                         <ShoppingCart className="mr-2 w-4 h-4" />

@@ -3,8 +3,6 @@
 import * as React from "react"
 import type { ProductResource } from "@/types/api"
 
-const MIN_PURCHASE_QUANTITY = 10
-
 export interface CartItem {
   product: ProductResource
   quantity: number
@@ -164,9 +162,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // Note: Authentication check should be done before calling this function
     // This function assumes user is already authenticated
     
+    const minOrder = product.min_order || 10
+    
     // Enforce minimal purchase quantity
-    if (quantity < MIN_PURCHASE_QUANTITY) {
-      quantity = MIN_PURCHASE_QUANTITY
+    if (quantity < minOrder) {
+      quantity = minOrder
     }
 
     setItems((prevItems) => {
@@ -175,16 +175,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (existingItem) {
         // Update quantity if item already exists
         const newQuantity = existingItem.quantity + quantity
-        if (newQuantity > product.ketersediaan_stok) {
-          alert(`Stok tersedia hanya ${product.ketersediaan_stok} unit`)
-          return prevItems
-        }
         // Ensure new quantity meets minimum
-        const finalQuantity = newQuantity < MIN_PURCHASE_QUANTITY ? MIN_PURCHASE_QUANTITY : newQuantity
-        if (finalQuantity > product.ketersediaan_stok) {
-          alert(`Stok tersedia hanya ${product.ketersediaan_stok} unit`)
-          return prevItems
-        }
+        const finalQuantity = newQuantity < minOrder ? minOrder : newQuantity
         return prevItems.map((item) =>
           item.product.id === product.id
             ? { ...item, quantity: finalQuantity }
@@ -192,12 +184,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         )
       } else {
         // Add new item
-        if (quantity > product.ketersediaan_stok) {
-          alert(`Stok tersedia hanya ${product.ketersediaan_stok} unit`)
-          return prevItems
-        }
-        if (quantity < MIN_PURCHASE_QUANTITY) {
-          alert(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit`)
+        if (quantity < minOrder) {
+          alert(`Minimal pembelian adalah ${minOrder} unit`)
           return prevItems
         }
         return [...prevItems, { product, quantity }]
@@ -210,31 +198,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const updateQuantity = React.useCallback((productId: number, quantity: number) => {
-    // Enforce minimal purchase quantity - cannot go below minimum
-    if (quantity > 0 && quantity < MIN_PURCHASE_QUANTITY) {
-      quantity = MIN_PURCHASE_QUANTITY
-    }
-    
-    if (quantity <= 0) {
-      removeItem(productId)
-      return
-    }
-    
     setItems((prevItems) => {
-      return prevItems.map((item) => {
-        if (item.product.id === productId) {
+      const item = prevItems.find((i) => i.product.id === productId)
+      if (!item) return prevItems
+      
+      const minOrder = item.product.min_order || 10
+      
+      // Enforce minimal purchase quantity - cannot go below minimum
+      if (quantity > 0 && quantity < minOrder) {
+        quantity = minOrder
+      }
+      
+      if (quantity <= 0) {
+        removeItem(productId)
+        return prevItems.filter((i) => i.product.id !== productId)
+      }
+      
+      return prevItems.map((i) => {
+        if (i.product.id === productId) {
           // Enforce minimal purchase quantity
-          if (quantity < MIN_PURCHASE_QUANTITY) {
-            alert(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit`)
-            return item
+          if (quantity < minOrder) {
+            alert(`Minimal pembelian adalah ${minOrder} unit`)
+            return i
           }
-          if (quantity > item.product.ketersediaan_stok) {
-            alert(`Stok tersedia hanya ${item.product.ketersediaan_stok} unit`)
-            return item
-          }
-          return { ...item, quantity }
+          return { ...i, quantity }
         }
-        return item
+        return i
       })
     })
   }, [removeItem])

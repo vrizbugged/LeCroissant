@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, LogIn, ShoppingCartIcon, ShoppingBasket, House, User, Receipt, UserPlus, Bell } from "lucide-react"
+import { LogOut, LogIn, ShoppingCartIcon, Navigation, BookOpenText, Store, ShoppingBasket, House, User, Receipt, UserPlus, Bell } from "lucide-react"
 import { authApi, ordersApi } from "@/lib/api"
 import type { UserResource, OrderResource } from "@/types/api"
 
@@ -238,19 +238,104 @@ export function Navbar() {
 
             {/* Menu Navigasi (Hanya di Desktop) */}
             <div className="hidden md:flex items-center gap-1">
-              <Link href="/">
-                <Button variant="ghost" className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20">
-                <House className="h-4 w-4 mr-1" />  
+              <Button asChild variant="ghost" className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20">
+                <Link href="/">
+                  <House className="h-4 w-4 mr-1" />  
                   Home
-                </Button>
-              </Link>
+                </Link>
+              </Button>
               <span className="text-black/70 mx-1">·</span>
-              <Link href="/shop">
-                <Button variant="ghost" className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20">
-                <ShoppingBasket className="h-4 w-4 mr-1" />
+              
+              <Button 
+                variant="ghost" 
+                className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20"
+                onClick={() => {
+                  if (window.location.pathname === '/') {
+                    // If already on home page, scroll to section
+                    const element = document.getElementById('about-us')
+                    if (element) {
+                      const offset = 100 // Account for fixed navbar
+                      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+                      const offsetPosition = elementPosition - offset
+                      
+                      window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                      })
+                    }
+                  } else {
+                    // If on different page, navigate to home with hash
+                    window.location.href = '/#about-us'
+                  }
+                }}
+              >
+                <Store className="h-4 w-4 mr-1" />
+                About Us
+              </Button>
+              <span className="text-black/70 mx-1">·</span>
+
+              <Button 
+                variant="ghost" 
+                className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20"
+                onClick={() => {
+                  if (window.location.pathname === '/') {
+                    // If already on home page, scroll to section
+                    const element = document.getElementById('how-to-order')
+                    if (element) {
+                      const offset = 100 // Account for fixed navbar
+                      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+                      const offsetPosition = elementPosition - offset
+                      
+                      window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                      })
+                    }
+                  } else {
+                    // If on different page, navigate to home with hash
+                    window.location.href = '/#how-to-order'
+                  }
+                }}
+              >
+                <BookOpenText className="h-4 w-4 mr-1" />
+                How To Order
+              </Button>
+              <span className="text-black/70 mx-1">·</span>
+
+              <Button 
+                variant="ghost" 
+                className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20"
+                onClick={() => {
+                  if (window.location.pathname === '/') {
+                    // If already on home page, scroll to section
+                    const element = document.getElementById('visit-us')
+                    if (element) {
+                      const offset = 100 // Account for fixed navbar
+                      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+                      const offsetPosition = elementPosition - offset
+                      
+                      window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                      })
+                    }
+                  } else {
+                    // If on different page, navigate to home with hash
+                    window.location.href = '/#visit-us'
+                  }
+                }}
+              >
+                <Navigation className="h-4 w-4 mr-1" />
+                Visit Us
+              </Button>
+
+              <span className="text-black/70 mx-1">·</span>
+              <Button asChild variant="ghost" className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20">
+                <Link href="/shop">
+                  <ShoppingBasket className="h-4 w-4 mr-1" />
                   Shop
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
 
@@ -261,7 +346,7 @@ export function Navbar() {
               <Button
                 variant="outline"
                 size="sm"
-                className="text-sm bg-white border-white/30 text-orange-600 hover:bg-white/90 hover:text-orange-700 shadow-sm relative"
+                className="text-sm bg-white border-white/30 text-orange-600 hover:bg-black/20 hover:text-orange-700 shadow-sm relative"
               >
                 <ShoppingCartIcon className="h-4 w-4" />
                 {isLoggedIn && cartItemCount > 0 && (
@@ -277,7 +362,7 @@ export function Navbar() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-sm bg-white border-white/30 text-orange-600 hover:bg-white/90 hover:text-orange-700 shadow-sm gap-2 relative"
+                  className="text-sm bg-white border-white/30 text-orange-600 hover:bg-black/20 hover:text-orange-700 shadow-sm gap-2 relative"
                   onClick={handleUserMenuClick}
                 >
                   <User className="h-4 w-4" />
@@ -295,7 +380,7 @@ export function Navbar() {
                 {isLoggedIn ? (
                   <>
                     <DropdownMenuItem asChild>
-                      <Link href="/my-transactions" className="flex items-center cursor-pointer">
+                      <Link href="/my-transactions" className="flex items-center cursor-pointer text-black-600 focus:text-red-600 focus:bg-red-50">
                         <Receipt className="mr-2 h-4 w-4" />
                         My Transactions
                       </Link>
@@ -303,7 +388,7 @@ export function Navbar() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={handleLogout}
-                      className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                      className="cursor-pointer text-black-600 focus:text-red-600 focus:bg-red-50"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
                       Logout

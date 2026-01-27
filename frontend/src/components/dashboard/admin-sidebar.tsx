@@ -47,17 +47,17 @@ const baseNavItems = [
     icon: LayoutDashboardIcon,
   },
   {
-    title: "Manajemen Produk",
+    title: "Product Management",
     url: "/dashboard/products",
     icon: PackageIcon,
   },
   {
-    title: "Manajemen Pesanan",
+    title: "Order Management",
     url: "/dashboard/orders",
     icon: ShoppingCartIcon,
   },
   {
-    title: "Data Klien",
+    title: "Client Management",
     url: "/dashboard/clients",
     icon: UsersIcon,
   },

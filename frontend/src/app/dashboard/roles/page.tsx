@@ -68,7 +68,7 @@ export default function RolesPage() {
         setAssignedUsers(usersWithRoles)
       } catch (error) {
         console.error("Error fetching data:", error)
-        toast.error("Gagal memuat data")
+        toast.error("Failed to load data")
       } finally {
         setLoading(false)
       }
@@ -133,7 +133,7 @@ export default function RolesPage() {
   // Handle create/edit role
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      toast.error("Nama role wajib diisi")
+      toast.error("Role name is required")
       return
     }
 
@@ -142,13 +142,13 @@ export default function RolesPage() {
       if (isEditMode && selectedRole) {
         result = await rolesApi.update(selectedRole.id, formData)
         if (result) {
-          toast.success("Role berhasil diperbarui")
+          toast.success("Role updated successfully")
           setRoles(roles.map((r) => (r.id === selectedRole.id ? result : r)))
         }
       } else {
         result = await rolesApi.create(formData)
         if (result) {
-          toast.success("Role berhasil dibuat")
+          toast.success("Role created successfully")
           setRoles([...roles, result])
         }
       }
@@ -158,22 +158,22 @@ export default function RolesPage() {
         resetForm()
       }
     } catch (error) {
-      toast.error("Gagal menyimpan role")
+      toast.error("Failed to save role")
     }
   }
 
   // Handle delete role
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus role ini?")) return
+    if (!confirm("Are you sure you want to delete this role?")) return
 
     try {
       const success = await rolesApi.delete(id)
       if (success) {
-        toast.success("Role berhasil dihapus")
+        toast.success("Role deleted successfully")
         setRoles(roles.filter((r) => r.id !== id))
       }
     } catch (error) {
-      toast.error("Gagal menghapus role")
+      toast.error("Failed to delete role")
     }
   }
 
@@ -229,12 +229,12 @@ export default function RolesPage() {
   // Assign role to user
   const handleAssignRole = async () => {
     if (!selectedUser) {
-      toast.error("User belum dipilih")
+      toast.error("User not selected")
       return
     }
 
     if (!selectedRoleForUser) {
-      toast.error("Role wajib dipilih")
+      toast.error("Role must be selected")
       return
     }
 
@@ -245,7 +245,7 @@ export default function RolesPage() {
       })
 
       if (result) {
-        toast.success("Role berhasil diberikan ke user")
+        toast.success("Role assigned to user successfully")
         
         // Update atau add to assigned users list
         setAssignedUsers((prev) => {
@@ -265,7 +265,7 @@ export default function RolesPage() {
       }
     } catch (error) {
       console.error("Error assigning role:", error)
-      toast.error("Gagal memberikan role ke user")
+      toast.error("Failed to assign role to user")
     } finally {
       setAssigningRole(false)
     }
@@ -284,7 +284,7 @@ export default function RolesPage() {
   // Save edited role
   const handleSaveEdit = async (userId: number) => {
     if (!editingRole) {
-      toast.error("Role wajib dipilih")
+      toast.error("Role must be selected")
       return
     }
 
@@ -294,7 +294,7 @@ export default function RolesPage() {
       })
 
       if (result) {
-        toast.success("Role berhasil diperbarui")
+        toast.success("Role updated successfully")
         setAssignedUsers((prev) =>
           prev.map((u) => (u.id === userId ? result : u))
         )
@@ -303,7 +303,7 @@ export default function RolesPage() {
       }
     } catch (error) {
       console.error("Error updating user role:", error)
-      toast.error("Gagal memperbarui role")
+      toast.error("Failed to update role")
     }
   }
 
@@ -316,7 +316,7 @@ export default function RolesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Memuat data...</div>
+        <div className="text-muted-foreground">Loading data...</div>
       </div>
     )
   }
@@ -326,7 +326,7 @@ export default function RolesPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Role & Permission</h1>
         <p className="text-muted-foreground">
-          Kelola role dan permission untuk sistem
+          Manage roles and permissions for the system
         </p>
       </div>
 
@@ -341,7 +341,7 @@ export default function RolesPage() {
           <div className="flex items-center justify-end">
             <Button onClick={handleCreate}>
               <Plus className="mr-2 h-4 w-4" />
-              Tambah Role
+              Add Role
             </Button>
           </div>
 
@@ -351,7 +351,7 @@ export default function RolesPage() {
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cari role atau permission..."
+                  placeholder="Search role or permission..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8"
@@ -363,26 +363,26 @@ export default function RolesPage() {
           {/* Roles Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Daftar Role</CardTitle>
+              <CardTitle>Role List</CardTitle>
               <CardDescription>
-                {filteredRoles.length} role ditemukan
+                {filteredRoles.length} role(s) found
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nama Role</TableHead>
+                    <TableHead>Role Name</TableHead>
                     <TableHead>Permissions</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredRoles.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground">
-                        Tidak ada role ditemukan
+                        No roles found
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -403,18 +403,18 @@ export default function RolesPage() {
                                 </Badge>
                               ))
                             ) : (
-                              <span className="text-muted-foreground text-sm">Tidak ada</span>
+                              <span className="text-muted-foreground text-sm">None</span>
                             )}
                             {role.permissions.length > 3 && (
                               <Badge variant="outline" className="text-xs">
-                                +{role.permissions.length - 3} lainnya
+                                +{role.permissions.length - 3} more
                               </Badge>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={role.status === "Aktif" ? "default" : "secondary"}>
-                            {role.status || "Aktif"}
+                          <Badge variant={role.status === "Active" ? "default" : "secondary"}>
+                            {role.status || "Active"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -449,24 +449,24 @@ export default function RolesPage() {
             <DialogContent className="max-w-2xl max-h-[80vh]">
               <DialogHeader>
                 <DialogTitle>
-                  {isEditMode ? "Edit Role" : "Tambah Role Baru"}
+                  {isEditMode ? "Edit Role" : "Add New Role"}
                 </DialogTitle>
                 <DialogDescription>
                   {isEditMode
-                    ? "Perbarui informasi role dan permission"
-                    : "Buat role baru dan tetapkan permission"}
+                    ? "Update role and permission information"
+                    : "Create a new role and assign permissions"}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nama Role</Label>
+                  <Label htmlFor="name">Role Name</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, name: e.target.value }))
                     }
-                    placeholder="Contoh: Manager, Staff, dll"
+                    placeholder="Example: Manager, Staff, etc."
                   />
                 </div>
                 <div className="space-y-2">
@@ -494,10 +494,10 @@ export default function RolesPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Batal
+                  Cancel
                 </Button>
                 <Button onClick={handleSubmit}>
-                  {isEditMode ? "Perbarui" : "Buat"}
+                  {isEditMode ? "Update" : "Create"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -508,9 +508,9 @@ export default function RolesPage() {
         <TabsContent value="assign" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Berikan Role ke User</CardTitle>
+              <CardTitle>Assign Role to User</CardTitle>
               <CardDescription>
-                Cari user berdasarkan email dan berikan role yang sesuai
+                Search user by email and assign appropriate role
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -523,7 +523,7 @@ export default function RolesPage() {
                       ref={inputRef}
                       id="user-email"
                       type="email"
-                      placeholder="Ketik email user, contoh: edward@example.com"
+                      placeholder="Type user email, example: edward@example.com"
                       value={userEmail}
                       onChange={(e) => {
                         setUserEmail(e.target.value)
@@ -594,13 +594,13 @@ export default function RolesPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="role-select">Pilih Role</Label>
+                    <Label htmlFor="role-select">Select Role</Label>
                     <Select
                       value={selectedRoleForUser}
                       onValueChange={setSelectedRoleForUser}
                     >
                       <SelectTrigger id="role-select">
-                        <SelectValue placeholder="Pilih role untuk user ini" />
+                        <SelectValue placeholder="Select role for this user" />
                       </SelectTrigger>
                       <SelectContent>
                         {roles.map((role) => (
@@ -618,7 +618,7 @@ export default function RolesPage() {
                     className="w-full"
                   >
                     <UserPlus className="mr-2 h-4 w-4" />
-                    {assigningRole ? "Memberikan Role..." : "Berikan Role"}
+                    {assigningRole ? "Assigning Role..." : "Assign Role"}
                   </Button>
                 </div>
               )}
@@ -628,8 +628,8 @@ export default function RolesPage() {
                   <Mail className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <p className="text-sm text-muted-foreground">
                     {userEmail.length >= 2 
-                      ? "User tidak ditemukan. Pastikan email sudah terdaftar."
-                      : "Ketik minimal 2 karakter untuk mencari user"}
+                      ? "User not found. Make sure the email is registered."
+                      : "Type at least 2 characters to search for user"}
                   </p>
                 </div>
               )}
@@ -639,24 +639,24 @@ export default function RolesPage() {
           {/* Assigned Users Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Users dengan Role</CardTitle>
+              <CardTitle>Users with Roles</CardTitle>
               <CardDescription>
-                Daftar user yang sudah diberikan role
+                List of users who have been assigned roles
               </CardDescription>
             </CardHeader>
             <CardContent>
               {assignedUsers.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Belum ada user yang diberikan role
+                  No users have been assigned roles yet
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Email</TableHead>
-                      <TableHead>Nama</TableHead>
+                      <TableHead>Name</TableHead>
                       <TableHead>Role</TableHead>
-                      <TableHead className="text-right">Aksi</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -690,7 +690,7 @@ export default function RolesPage() {
                                   </Badge>
                                 ))
                               ) : (
-                                <span className="text-muted-foreground text-sm">Tidak ada</span>
+                                <span className="text-muted-foreground text-sm">None</span>
                               )}
                             </div>
                           )}

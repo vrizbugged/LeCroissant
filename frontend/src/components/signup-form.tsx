@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import Link from "next/link"
-
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -23,12 +23,12 @@ import { authApi } from "@/lib/api"
 import { toast } from "sonner"
 
 const signupFormSchema = z.object({
-  name: z.string().min(1, "Nama wajib diisi"),
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(8, "Password harus minimal 8 karakter"),
-  password_confirmation: z.string().min(8, "Konfirmasi password wajib diisi"),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  password_confirmation: z.string().min(8, "Password confirmation is required"),
 }).refine((data) => data.password === data.password_confirmation, {
-  message: "Password tidak cocok",
+  message: "Passwords do not match",
   path: ["password_confirmation"],
 })
 
@@ -73,7 +73,7 @@ export function SignupForm({
           localStorage.setItem("user", JSON.stringify(user))
         }
 
-        toast.success("Akun berhasil dibuat! Anda telah masuk secara otomatis.")
+        toast.success("Account created successfully! You have been automatically logged in.")
 
         // Dispatch event untuk cart context agar cart di-reload
         window.dispatchEvent(new Event("authChanged"))
@@ -95,15 +95,15 @@ export function SignupForm({
       } else {
         // Jika register sukses tapi token tidak ditemukan di response
         console.error("Token missing in response:", result)
-        toast.error("Terjadi kesalahan sistem: Token tidak ditemukan")
+        toast.error("System error: Token not found")
       }
     } catch (error) {
       console.error("Error registering:", error)
       // Tampilkan error message yang lebih spesifik
       if (error instanceof Error) {
-        toast.error(error.message || "Terjadi kesalahan saat mendaftar")
+        toast.error(error.message || "An error occurred during registration")
       } else {
-        toast.error("Terjadi kesalahan saat mendaftar")
+        toast.error("An error occurred during registration")
       }
     } finally {
       setLoading(false)
@@ -120,7 +120,7 @@ export function SignupForm({
                 <div className="flex flex-col items-center text-center">
                   <h1 className="text-2xl font-bold">Create your account</h1>
                   <p className="text-balance text-muted-foreground">
-                    Daftar sebagai klien B2B untuk memulai pemesanan
+                    Sign up as a B2B client to start ordering
                   </p>
                 </div>
                 <FormField
@@ -129,9 +129,9 @@ export function SignupForm({
                   render={({ field }) => (
                     <FormItem>
                       <div className="grid gap-2">
-                        <FormLabel>Nama Lengkap</FormLabel>
+                        <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nama lengkap" {...field} />
+                          <Input placeholder="Full name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </div>
@@ -191,7 +191,7 @@ export function SignupForm({
                     Or continue with
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                {/* <div className="grid grid-cols-3 gap-4">
                   <Button variant="outline" type="button" className="w-full">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path
@@ -219,7 +219,7 @@ export function SignupForm({
                     </svg>
                     <span className="sr-only">Sign up with Meta</span>
                   </Button>
-                </div>
+                </div> */}
                 <div className="text-center text-sm">
                   Already have an account?{" "}
                   <Link href="/login" className="underline underline-offset-4">
@@ -230,8 +230,11 @@ export function SignupForm({
             </form>
           </Form>
           <div className="relative hidden bg-muted md:block">
-            <img
-              src="/placeholder.svg"
+            <Image
+              src="/image/pain_au.png"
+              alt="Pain au Chocolat"
+              width={500}
+              height={500}
               alt="Image"
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
             />

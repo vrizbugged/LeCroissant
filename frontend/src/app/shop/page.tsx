@@ -22,7 +22,6 @@ import type { ProductResource } from "@/types/api"
 import { useCart } from "@/contexts/cart-context"
 import { toast } from "sonner"
 
-const MIN_PURCHASE_QUANTITY = 10
 
 export default function ShopPage() {
   const { addItem, isAuthenticated } = useCart()
@@ -45,7 +44,7 @@ export default function ShopPage() {
         setProducts(productsData || [])
       } catch (err) {
         console.error("Error fetching products:", err)
-        setError(err instanceof Error ? err.message : "Gagal memuat data produk")
+        setError(err instanceof Error ? err.message : "Failed to load product data")
       } finally {
         setLoading(false)
       }
@@ -75,17 +74,17 @@ export default function ShopPage() {
   }, [searchQuery, products])
 
   // Handle quantity change
-  const handleQuantityChange = (productId: number, value: string) => {
+  const handleQuantityChange = (productId: number, value: string, minOrder: number) => {
     const numValue = parseInt(value) || 0
     if (numValue < 0) return
     // Enforce minimal purchase quantity
-    const finalValue = numValue < MIN_PURCHASE_QUANTITY ? MIN_PURCHASE_QUANTITY : numValue
+    const finalValue = numValue < minOrder ? minOrder : numValue
     setQuantities((prev) => ({
       ...prev,
       [productId]: finalValue,
     }))
-    if (numValue > 0 && numValue < MIN_PURCHASE_QUANTITY) {
-      toast.warning(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit`)
+    if (numValue > 0 && numValue < minOrder) {
+      toast.warning(`Minimum purchase is ${minOrder} units`)
     }
   }
 
@@ -97,34 +96,26 @@ export default function ShopPage() {
       return
     }
 
-    let quantity = quantities[product.id] || MIN_PURCHASE_QUANTITY
+    const minOrder = product.min_order || 10
+    let quantity = quantities[product.id] || minOrder
     
     // Enforce minimal purchase quantity
-    if (quantity < MIN_PURCHASE_QUANTITY) {
-      quantity = MIN_PURCHASE_QUANTITY
+    if (quantity < minOrder) {
+      quantity = minOrder
       setQuantities((prev) => ({
         ...prev,
-        [product.id]: MIN_PURCHASE_QUANTITY,
+        [product.id]: minOrder,
       }))
-      toast.warning(`Minimal pembelian adalah ${MIN_PURCHASE_QUANTITY} unit. Quantity diubah menjadi ${MIN_PURCHASE_QUANTITY}`)
+      toast.warning(`Minimum purchase is ${minOrder} units. Quantity changed to ${minOrder}`)
     }
     
-    if (quantity > product.ketersediaan_stok) {
-      toast.error(`Stok tersedia hanya ${product.ketersediaan_stok} unit`)
-      return
-    }
-    
-    if (product.ketersediaan_stok < MIN_PURCHASE_QUANTITY) {
-      toast.error(`Stok tidak mencukupi untuk minimal pembelian ${MIN_PURCHASE_QUANTITY} unit`)
-      return
-    }
     
     addItem(product, quantity)
-    toast.success(`${quantity}x ${product.nama_produk} ditambahkan ke keranjang`)
+    toast.success(`${quantity}x ${product.nama_produk} added to cart`)
     // Reset quantity input to minimum
     setQuantities((prev) => ({
       ...prev,
-      [product.id]: MIN_PURCHASE_QUANTITY,
+      [product.id]: minOrder,
     }))
   }
 
@@ -133,13 +124,6 @@ export default function ShopPage() {
     router.push("/login")
   }
 
-  // Get stock badge color
-  const getStockBadgeColor = (stock: number): string => {
-    if (stock > 10) {
-      return "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-    }
-    return "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -149,9 +133,9 @@ export default function ShopPage() {
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Login Diperlukan</DialogTitle>
+            <DialogTitle>Login Required</DialogTitle>
             <DialogDescription>
-              Anda harus login terlebih dahulu untuk menambahkan produk ke keranjang.
+              You must login first to add products to cart.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -159,7 +143,7 @@ export default function ShopPage() {
               variant="outline"
               onClick={() => setShowLoginDialog(false)}
             >
-              Batal
+              Cancel
             </Button>
             <Button onClick={handleLoginClick}>
               Login
@@ -170,12 +154,37 @@ export default function ShopPage() {
 
       <div className="container mx-auto px-4 py-8 pt-24 md:pt-28">
         <div className="flex flex-1 flex-col gap-6">
+          {/* Banner Section */}
+          <div className="relative w-full h-48 md:h-64 lg:h-80 rounded-lg overflow-hidden shadow-lg mb-4">
+            <Image
+              src="/image/almondbg.png"
+              alt="Pastry Banner"
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
+            />
+            {/* Overlay untuk readability */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
+            {/* Banner Content */}
+            <div className="relative z-10 h-full flex items-center px-6 md:px-12">
+              <div className="max-w-2xl">
+                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2">
+                  Premium Pastry Collection
+                </h2>
+                <p className="text-sm md:text-base lg:text-lg text-white/90">
+                  Discover our handcrafted pastries made with the finest ingredients
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Header Section */}
           <div className="flex flex-col gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Katalog Pastry</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Explore Our Products</h1>
               <p className="text-muted-foreground mt-1">
-                Pesan produk pastry premium dengan harga grosir khusus mitra.
+                Order premium pastry products with prices for partners.
               </p>
             </div>
 
@@ -185,7 +194,7 @@ export default function ShopPage() {
               <div className="relative flex-1">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cari produk..."
+                  placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -198,24 +207,24 @@ export default function ShopPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Loader2Icon className="h-12 w-12 mx-auto mb-4 animate-spin text-muted-foreground" />
-              <p className="text-lg font-medium text-muted-foreground">Memuat produk...</p>
+              <p className="text-lg font-medium text-muted-foreground">Loading products...</p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <p className="text-lg font-medium text-destructive">Error: {error}</p>
               <p className="text-sm mt-1 text-muted-foreground">
-                Gagal memuat data produk. Silakan coba lagi nanti.
+                Failed to load product data. Please try again later.
               </p>
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="text-muted-foreground mb-2">
                 <SearchIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">Produk tidak ditemukan</p>
+                <p className="text-lg font-medium">Products not found</p>
                 <p className="text-sm mt-1">
                   {searchQuery
-                    ? "Coba ubah kata kunci pencarian"
-                    : "Belum ada produk yang tersedia"}
+                    ? "Try changing your search keywords"
+                    : "No products available yet"}
                 </p>
               </div>
             </div>
@@ -254,16 +263,6 @@ export default function ShopPage() {
 
                   {/* Card Content */}
                   <CardContent className="flex-1 flex flex-col gap-3 p-4">
-                    {/* Stock Badge */}
-                    <div className="flex items-center justify-between">
-                      <Badge
-                        variant="outline"
-                        className={getStockBadgeColor(product.ketersediaan_stok)}
-                      >
-                        Stok: {product.ketersediaan_stok}
-                      </Badge>
-                    </div>
-
                     {/* Product Title */}
                     <h3 className="font-bold text-lg leading-tight">
                       {product.nama_produk}
@@ -271,7 +270,7 @@ export default function ShopPage() {
 
                     {/* Description */}
                     <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
-                      {product.deskripsi || "Tidak ada deskripsi"}
+                      {product.deskripsi || "No description"}
                     </p>
 
                     {/* Price */}
@@ -280,7 +279,7 @@ export default function ShopPage() {
                         {product.harga_formatted || formatPrice(product.harga_grosir)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Harga grosir per unit
+                        Wholesale price per unit
                       </p>
                     </div>
                   </CardContent>
@@ -290,15 +289,14 @@ export default function ShopPage() {
                     {/* Quantity Input */}
                     <div className="flex items-center gap-2 w-full">
                       <label htmlFor={`qty-${product.id}`} className="text-sm font-medium whitespace-nowrap">
-                        Jumlah:
+                        Quantity:
                       </label>
                       <Input
                         id={`qty-${product.id}`}
                         type="number"
-                        min={MIN_PURCHASE_QUANTITY}
-                        max={product.ketersediaan_stok}
-                        value={quantities[product.id] || MIN_PURCHASE_QUANTITY}
-                        onChange={(e) => handleQuantityChange(product.id, e.target.value)}
+                        min={product.min_order || 10}
+                        value={quantities[product.id] || (product.min_order || 10)}
+                        onChange={(e) => handleQuantityChange(product.id, e.target.value, product.min_order || 10)}
                         className="flex-1"
                       />
                     </div>
@@ -310,13 +308,10 @@ export default function ShopPage() {
                         e.stopPropagation()
                         handleAddToCart(product)
                       }}
-                      className="w-full"
-                      disabled={product.ketersediaan_stok === 0}
+                      className="w-full bg-orange-500"
                     >
                       <ShoppingCartIcon className="mr-2 h-4 w-4" />
-                      {product.ketersediaan_stok === 0
-                        ? "Stok Habis"
-                        : "Tambah ke Keranjang"}
+                      Add to Cart
                     </Button>
                   </CardFooter>
                 </Card>

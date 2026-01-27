@@ -52,10 +52,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 // 1. Definisikan Schema Validasi
 const productFormSchema = z.object({
-  nama_produk: z.string().min(1, "Nama produk wajib diisi"),
-  deskripsi: z.string().min(1, "Deskripsi wajib diisi"),
-  harga_grosir: z.number().min(0, "Harga harus lebih dari 0"),
-  ketersediaan_stok: z.number().min(0, "Stok harus lebih dari atau sama dengan 0"),
+  nama_produk: z.string().min(1, "Product name is required"),
+  deskripsi: z.string().min(1, "Description is required"),
+  harga_grosir: z.number().min(0, "Price must be greater than 0"),
+  min_order: z.number().min(1, "Minimum order must be greater than 0").optional(),
   // Gambar bisa berupa File (upload baru), String (URL lama), atau kosong
   gambar: z.union([
     z.instanceof(File),
@@ -86,7 +86,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
       nama_produk: "",
       deskripsi: "",
       harga_grosir: 0,
-      ketersediaan_stok: 0,
+      min_order: 10,
       gambar: "",
       status: "Active",
     },
@@ -110,7 +110,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
         nama_produk: editingProduct.nama_produk || "",
         deskripsi: editingProduct.deskripsi || "",
         harga_grosir: Number(editingProduct.harga_grosir) || 0,
-        ketersediaan_stok: Number(editingProduct.ketersediaan_stok) || 0,
+        min_order: editingProduct.min_order || 10,
         gambar: imageUrl, 
         status: mappedStatus,
       })
@@ -119,7 +119,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
         nama_produk: "",
         deskripsi: "",
         harga_grosir: 0,
-        ketersediaan_stok: 0,
+        min_order: 10,
         gambar: "",
         status: "Active",
       })
@@ -136,7 +136,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
             nama_produk: data.nama_produk,
             deskripsi: data.deskripsi,
             harga_grosir: data.harga_grosir,
-            ketersediaan_stok: data.ketersediaan_stok,
+            min_order: data.min_order || 10,
             status: data.status,
             // Logic Gambar
             gambar: (data.gambar instanceof File) ? data.gambar : undefined
@@ -146,12 +146,12 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
         
         if (updated) {
           setProducts(products.map(p => p.id === editingProduct.id ? updated : p))
-          toast.success("Produk berhasil diperbarui")
+          toast.success("Product updated successfully")
           setIsDialogOpen(false)
           setEditingProduct(null)
           router.refresh()
         } else {
-          toast.error("Gagal memperbarui produk")
+          toast.error("Failed to update product")
         }
 
       } else {
@@ -162,35 +162,35 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
         
         if (created) {
           setProducts([...products, created])
-          toast.success("Produk berhasil ditambahkan")
+          toast.success("Product added successfully")
           setIsDialogOpen(false)
           setEditingProduct(null)
           router.refresh()
         } else {
-          toast.error("Gagal menambahkan produk")
+          toast.error("Failed to add product")
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan"
+      const errorMessage = error instanceof Error ? error.message : "An error occurred"
       toast.error(errorMessage)
       console.error("Error submitting product:", error)
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus produk ini?")) return
+    if (!confirm("Are you sure you want to delete this product?")) return
 
     try {
       const success = await productsApi.delete(id)
       if (success) {
         setProducts(products.filter(p => p.id !== id))
-        toast.success("Produk berhasil dihapus")
+        toast.success("Product deleted successfully")
         router.refresh()
       } else {
-        toast.error("Gagal menghapus produk")
+        toast.error("Failed to delete product")
       }
     } catch (error) {
-      toast.error("Terjadi kesalahan sistem")
+      toast.error("System error occurred")
       console.error(error)
     }
   }
@@ -219,8 +219,8 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
     const statusMap: Record<string, { label: string; className: string }> = {
       'Active': { label: "Active", className: "bg-green-100 text-green-800 border-green-300" },
       'Inactive': { label: "Inactive", className: "bg-red-100 text-red-800 border-red-300" },
-      'Aktif': { label: "Aktif", className: "bg-green-100 text-green-800 border-green-300" },
-      'Non Aktif': { label: "Non Aktif", className: "bg-red-100 text-red-800 border-red-300" },
+      'Aktif': { label: "Active", className: "bg-green-100 text-green-800 border-green-300" },
+      'Non Aktif': { label: "Inactive", className: "bg-red-100 text-red-800 border-red-300" },
     }
 
     const config = statusMap[status] || {
@@ -241,25 +241,25 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Manajemen Produk</CardTitle>
-              <CardDescription>Kelola katalog produk pastry Le Croissant</CardDescription>
+              <CardTitle>Product Management</CardTitle>
+              <CardDescription>Manage Le Croissant pastry product catalog</CardDescription>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={handleAdd}>
                   <PlusIcon className="mr-2 h-4 w-4" />
-                  Tambah Produk
+                  Add Product
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>
-                    {editingProduct ? "Edit Produk" : "Tambah Produk Baru"}
+                    {editingProduct ? "Edit Product" : "Add New Product"}
                   </DialogTitle>
                   <DialogDescription>
                     {editingProduct
-                      ? "Perbarui informasi produk yang sudah ada"
-                      : "Tambahkan produk pastry baru ke katalog"}
+                      ? "Update existing product information"
+                      : "Add new pastry product to catalog"}
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -269,9 +269,9 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                       name="nama_produk"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nama Produk</FormLabel>
+                          <FormLabel>Product Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="Contoh: Croissant Almond" {...field} />
+                            <Input placeholder="Example: Almond Croissant" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -282,9 +282,9 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                       name="deskripsi"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Deskripsi</FormLabel>
+                          <FormLabel>Description</FormLabel>
                           <FormControl>
-                            <Input placeholder="Deskripsi produk" {...field} />
+                            <Input placeholder="Product description" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -296,7 +296,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                         name="harga_grosir"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Harga Grosir (B2B)</FormLabel>
+                            <FormLabel>Wholesale Price (B2B)</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -311,16 +311,17 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                       />
                       <FormField
                         control={form.control}
-                        name="ketersediaan_stok"
+                        name="min_order"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Stok</FormLabel>
+                            <FormLabel>Minimum Order</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
-                                placeholder="0"
+                                placeholder="10"
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                value={field.value ?? 10}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 10)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -361,7 +362,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
 
                         return (
                           <FormItem>
-                            <FormLabel>Gambar Produk</FormLabel>
+                            <FormLabel>Product Image</FormLabel>
                             <div className="space-y-2">
                               <div className="flex gap-2">
                                 <Button
@@ -388,7 +389,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                                     }
                                   }}
                                 >
-                                  Gunakan URL
+                                  Use URL
                                 </Button>
                               </div>
                               
@@ -402,7 +403,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                                       const file = e.target.files?.[0]
                                       if (file) {
                                         if (file.size > 2 * 1024 * 1024) {
-                                          toast.error("Maksimal 2MB")
+                                          toast.error("Maximum 2MB")
                                           e.target.value = ''
                                           return
                                         }
@@ -430,7 +431,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                               )}
                             </div>
                             <FormDescription>
-                                {uploadType === 'file' ? "Format: JPG/PNG, Max 2MB" : "URL Gambar Eksternal"}
+                                {uploadType === 'file' ? "Format: JPG/PNG, Max 2MB" : "External Image URL"}
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -447,7 +448,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Pilih status" />
+                                <SelectValue placeholder="Select status" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -468,10 +469,10 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                           setEditingProduct(null)
                         }}
                       >
-                        Batal
+                        Cancel
                       </Button>
                       <Button type="submit">
-                        {editingProduct ? "Perbarui" : "Tambah"}
+                        {editingProduct ? "Update" : "Add"}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -485,20 +486,19 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Gambar</TableHead>
-                  <TableHead>Nama Produk</TableHead>
-                  <TableHead>Deskripsi</TableHead>
-                  <TableHead>Harga Grosir</TableHead>
-                  <TableHead>Stok</TableHead>
+                  <TableHead>Image</TableHead>
+                  <TableHead>Product Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Wholesale Price</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {products.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Belum ada produk
+                      No products yet
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -519,7 +519,6 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                       <TableCell className="font-medium">{product.nama_produk}</TableCell>
                       <TableCell className="max-w-xs truncate">{product.deskripsi}</TableCell>
                       <TableCell>{formatCurrency(product.harga_grosir || 0)}</TableCell>
-                      <TableCell>{product.ketersediaan_stok ?? 0}</TableCell>
                       <TableCell>{getStatusBadge(product.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
