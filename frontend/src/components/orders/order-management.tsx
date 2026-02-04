@@ -33,6 +33,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { Eye, FileText, Image as ImageIcon, Download, FileDown } from "lucide-react"
 
 const statusColors: Record<OrderResource['status'], string> = {
   menunggu_konfirmasi: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
@@ -76,6 +77,10 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
     orderId: number | null
   }>({ open: false, orderId: null })
   const [cancellationReason, setCancellationReason] = React.useState("")
+  const [paymentProofDialog, setPaymentProofDialog] = React.useState<{
+    open: boolean
+    order: OrderResource | null
+  }>({ open: false, order: null })
 
   const handleStatusChange = async (
     orderId: number, 
@@ -133,6 +138,14 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+    })
+  }
+
+  const formatDateForCSV = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
     })
   }
 
@@ -226,6 +239,79 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
     return filtered
   }, [orders, sortField, sortDirection, statusFilter])
 
+  // Handle export to CSV
+  const handleExport = () => {
+    try {
+      // Prepare CSV headers
+      const headers = [
+        "Order ID",
+        "Client Name",
+        "Company Name",
+        "Phone Number",
+        "Address",
+        "Delivery Date",
+        "Status",
+        "Total Price",
+        "Special Notes",
+        "Created At",
+        "Updated At"
+      ]
+
+      // Prepare CSV rows
+      const rows = sortedOrders.map((order) => {
+        const clientName = order.client?.name || order.user?.name || 'N/A'
+        const companyName = order.client?.company_name || order.user?.company_name || 'N/A'
+        const phoneNumber = order.client?.phone_number || order.user?.phone_number || 'N/A'
+        const address = order.client?.address || order.user?.address || 'N/A'
+        
+        return [
+          order.id,
+          clientName,
+          companyName,
+          phoneNumber,
+          address,
+          formatDateForCSV(order.delivery_date),
+          statusLabels[order.status],
+          order.total_price.toString(), // Use raw number for CSV
+          order.special_notes || '',
+          formatDateForCSV(order.created_at),
+          formatDateForCSV(order.updated_at),
+        ]
+      })
+
+      // Create CSV content
+      const csv = [
+        headers.join(","),
+        ...rows.map((row) => row.map((cell) => {
+          // Escape quotes and wrap in quotes if contains comma, newline, or quote
+          const cellStr = String(cell || '')
+          if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
+            return `"${cellStr.replace(/"/g, '""')}"`
+          }
+          return cellStr
+        }).join(",")),
+      ].join("\n")
+
+      // Create and download file
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      const today = new Date().toISOString().split('T')[0]
+      const filterSuffix = statusFilter ? `-${statusLabels[statusFilter].replace(/\s+/g, '-')}` : ''
+      a.download = `orders-report-${today}${filterSuffix}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+      toast.success("Orders report exported successfully")
+    } catch (error) {
+      console.error("Error exporting orders:", error)
+      toast.error("Failed to export orders report")
+    }
+  }
+
   return (
     <div className="px-4 lg:px-6">
       <Card>
@@ -236,6 +322,14 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
               <CardDescription>Manage B2B Orders</CardDescription>
             </div>
             <div className="flex items-center gap-2"> 
+              <Button
+                variant="outline"
+                onClick={handleExport}
+                className="gap-2"
+              >
+                <FileDown className="h-4 w-4" />
+                Export Report
+              </Button>
               <Select
                 value={
                   statusFilter 
@@ -349,7 +443,19 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
                       {/* GANTI BAGIAN TABLE CELL AKSI INI */}
                       <TableCell>
                         {/* Gunakan Flexbox untuk memaksa elemen ke kanan dengan rapi */}
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Payment Proof Button */}
+                          {order.payment_proof_url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPaymentProofDialog({ open: true, order })}
+                              className="h-8"
+                              title="View Payment Proof"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Select
                             value={order.status}
                             onValueChange={(value) =>
@@ -426,6 +532,109 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
               Confirm Cancellation
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Proof Dialog */}
+      <Dialog 
+        open={paymentProofDialog.open} 
+        onOpenChange={(open) => {
+          setPaymentProofDialog({ open, order: open ? paymentProofDialog.order : null })
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Payment Proof - Order #{paymentProofDialog.order?.id}</DialogTitle>
+            <DialogDescription>
+              View payment proof uploaded by client for order validation
+            </DialogDescription>
+          </DialogHeader>
+          {paymentProofDialog.order?.payment_proof_url ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {paymentProofDialog.order.payment_proof_url.toLowerCase().includes('.pdf') || 
+                   paymentProofDialog.order.payment_proof_url.toLowerCase().includes('application/pdf') ? (
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <span className="text-sm text-muted-foreground">
+                    {paymentProofDialog.order.payment_proof_url.toLowerCase().includes('.pdf') || 
+                     paymentProofDialog.order.payment_proof_url.toLowerCase().includes('application/pdf')
+                      ? 'PDF Document' 
+                      : 'Image File'}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (paymentProofDialog.order?.payment_proof_url) {
+                      window.open(paymentProofDialog.order.payment_proof_url, '_blank')
+                    }
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+              
+              <div className="border rounded-lg overflow-hidden bg-muted/50">
+                {paymentProofDialog.order.payment_proof_url.toLowerCase().includes('.pdf') || 
+                 paymentProofDialog.order.payment_proof_url.toLowerCase().includes('application/pdf') ? (
+                  <div className="w-full h-[600px]">
+                    <iframe
+                      src={paymentProofDialog.order.payment_proof_url}
+                      className="w-full h-full border-0"
+                      title="Payment Proof PDF"
+                    />
+                  </div>
+                ) : (
+                  <div className="relative w-full min-h-[400px] max-h-[600px] flex items-center justify-center bg-muted p-4">
+                    <img
+                      src={paymentProofDialog.order.payment_proof_url}
+                      alt={`Payment proof for order #${paymentProofDialog.order.id}`}
+                      className="max-w-full max-h-[600px] object-contain rounded"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.style.display = 'none'
+                        const parent = target.parentElement
+                        if (parent && !parent.querySelector('.error-message')) {
+                          const errorDiv = document.createElement('div')
+                          errorDiv.className = 'error-message flex flex-col items-center justify-center h-full p-8 text-center'
+                          errorDiv.innerHTML = `
+                            <svg class="h-12 w-12 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p class="text-muted-foreground">Failed to load payment proof image</p>
+                            <button 
+                              class="mt-4 px-4 py-2 text-sm border rounded-md hover:bg-accent"
+                              onclick="window.open('${paymentProofDialog.order?.payment_proof_url || ''}', '_blank')"
+                            >
+                              Open in New Tab
+                            </button>
+                          `
+                          parent.appendChild(errorDiv)
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p><strong>Order ID:</strong> #{paymentProofDialog.order.id}</p>
+                <p><strong>Client:</strong> {paymentProofDialog.order.client?.name || paymentProofDialog.order.user?.name || 'N/A'}</p>
+                <p><strong>Total Amount:</strong> {formatCurrency(paymentProofDialog.order.total_price)}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <FileText className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+              <p className="text-muted-foreground">No payment proof available for this order</p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

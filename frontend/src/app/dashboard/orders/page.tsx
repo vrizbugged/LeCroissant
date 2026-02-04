@@ -21,7 +21,7 @@ export default function OrdersPage() {
         }
       } catch (err) {
         console.error("Error fetching orders:", err)
-        setError(err instanceof Error ? err.message : "Gagal memuat data pesanan")
+        setError(err instanceof Error ? err.message : "Failed to load order data")
       } finally {
         setLoading(false)
       }
@@ -32,7 +32,7 @@ export default function OrdersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Memuat data pesanan...</div>
+        <div className="text-muted-foreground">Loading order data...</div>
       </div>
     )
   }

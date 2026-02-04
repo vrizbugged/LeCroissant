@@ -183,8 +183,9 @@ export function SignupForm({
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full " disabled={loading}>
                   {loading ? "Creating account..." : "Create Account"}
+                  
                 </Button>
                 <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                   <span className="relative z-10 bg-background px-2 text-muted-foreground">
@@ -223,7 +224,7 @@ export function SignupForm({
                 <div className="text-center text-sm">
                   Already have an account?{" "}
                   <Link href="/login" className="underline underline-offset-4">
-                    Sign in
+                    Login
                   </Link>
                 </div>
               </div>
@@ -231,7 +232,7 @@ export function SignupForm({
           </Form>
           <div className="relative hidden bg-muted md:block">
             <Image
-              src="/image/pain_au.png"
+              src="/image/painau.png"
               alt="Pain au Chocolat"
               width={500}
               height={500}

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { CheckCircle2Icon, PencilIcon, PlusIcon, TrashIcon, MoreVertical, ChevronDown, ChevronRight, Phone, MapPin, Calendar1, CalendarArrowUp } from "lucide-react"
+import { CheckCircle2Icon, PencilIcon, PlusIcon, TrashIcon, MoreVertical, ChevronDown, ChevronRight, Phone, MapPin, Calendar1, CalendarArrowUp, SearchIcon } from "lucide-react"
 
 import type { ClientResource, ClientFormData } from "@/types/api"
 import { clientsApi } from "@/lib/api"
@@ -79,6 +79,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [editingClient, setEditingClient] = React.useState<ClientResource | null>(null)
   const [expandedRows, setExpandedRows] = React.useState<Set<number>>(new Set())
+  const [searchQuery, setSearchQuery] = React.useState("")
 
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientFormSchema),
@@ -232,6 +233,34 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
       </Badge>
     )
   }
+
+  // Filter clients based on search query
+  const filteredClients = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return clients
+    }
+
+    const query = searchQuery.toLowerCase().trim()
+    return clients.filter((client) => {
+      const name = client.name?.toLowerCase() || ""
+      const email = client.email?.toLowerCase() || ""
+      const companyName = client.company_name?.toLowerCase() || ""
+      const businessSector = client.business_sector?.toLowerCase() || ""
+      const phoneNumber = client.phone_number?.toLowerCase() || ""
+      const address = client.address?.toLowerCase() || ""
+      const status = client.status?.toLowerCase() || ""
+
+      return (
+        name.includes(query) ||
+        email.includes(query) ||
+        companyName.includes(query) ||
+        businessSector.includes(query) ||
+        phoneNumber.includes(query) ||
+        address.includes(query) ||
+        status.includes(query)
+      )
+    })
+  }, [clients, searchQuery])
 
   return (
     <div className="px-4 lg:px-6">
@@ -391,7 +420,19 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
           </div>
         </CardHeader>
         <CardContent>
-          {/* ... (Tabel tetap sama) ... */}
+          {/* Search Input */}
+          <div className="mb-4">
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by name, email, company, business sector, phone, address, or status..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
           <div className="w-full overflow-x-auto">
             <Table>
               <TableHeader>
@@ -407,14 +448,14 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients.length === 0 ? (
+                {filteredClients.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      No Data Client
+                      {searchQuery.trim() ? "No clients found matching your search" : "No Data Client"}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  clients.map((client) => {
+                  filteredClients.map((client) => {
                     const isExpanded = expandedRows.has(client.id)
                     return (
                       <React.Fragment key={client.id}>

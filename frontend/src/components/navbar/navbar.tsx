@@ -25,6 +25,7 @@ export function Navbar() {
   const [userData, setUserData] = React.useState<UserResource | null>(null)
   const [hasNewOrderUpdate, setHasNewOrderUpdate] = React.useState(false)
   const [latestOrderStatus, setLatestOrderStatus] = React.useState<OrderResource['status'] | null>(null)
+  const [mounted, setMounted] = React.useState(false)
 
   // Get cart items count based on user authentication
   const getCartCount = () => {
@@ -202,6 +203,11 @@ export function Navbar() {
     }
   }, [])
 
+  // Set mounted to true after component mounts (client-side only)
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Fungsi saat tombol Logout diklik
   const handleLogout = () => {
     localStorage.removeItem("token") // Hapus token
@@ -357,62 +363,74 @@ export function Navbar() {
               </Button>
             </Link>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-sm bg-white border-white/30 text-orange-600 hover:bg-black/20 hover:text-orange-700 shadow-sm gap-2 relative"
-                  onClick={handleUserMenuClick}
-                >
-                  <User className="h-4 w-4" />
-                  {isLoggedIn && userData?.name && (
-                    <span className="hidden sm:inline-block max-w-[120px] truncate">
-                      {userData.name}
-                    </span>
+            {mounted ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-sm bg-white border-white/30 text-orange-600 hover:bg-black/20 hover:text-orange-700 shadow-sm gap-2 relative"
+                    onClick={handleUserMenuClick}
+                  >
+                    <User className="h-4 w-4" />
+                    {isLoggedIn && userData?.name && (
+                      <span className="hidden sm:inline-block max-w-[120px] truncate">
+                        {userData.name}
+                      </span>
+                    )}
+                    {hasNewOrderUpdate && (
+                      <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {isLoggedIn ? (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/my-transactions" className="flex items-center cursor-pointer text-black-600 focus:text-red-600 focus:bg-red-50">
+                          <Receipt className="mr-2 h-4 w-4" />
+                          My Transactions
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleLogout}
+                        className="cursor-pointer text-black-600 focus:text-red-600 focus:bg-red-50"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/login" className="flex items-center cursor-pointer">
+                          <LogIn className="mr-2 h-4 w-4" />
+                          Login
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/signup" className="flex items-center cursor-pointer">
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Sign Up
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
-                  {hasNewOrderUpdate && (
-                    <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {isLoggedIn ? (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link href="/my-transactions" className="flex items-center cursor-pointer text-black-600 focus:text-red-600 focus:bg-red-50">
-                        <Receipt className="mr-2 h-4 w-4" />
-                        My Transactions
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="cursor-pointer text-black-600 focus:text-red-600 focus:bg-red-50"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Logout
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link href="/login" className="flex items-center cursor-pointer">
-                        <LogIn className="mr-2 h-4 w-4" />
-                        Login
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/signup" className="flex items-center cursor-pointer">
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Sign Up
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm bg-white border-white/30 text-orange-600 hover:bg-black/20 hover:text-orange-700 shadow-sm gap-2 relative"
+                onClick={handleUserMenuClick}
+                disabled
+              >
+                <User className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           
         </div>

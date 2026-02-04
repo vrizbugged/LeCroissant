@@ -40,6 +40,7 @@ export interface OrderResource {
   cancellation_reason?: string | null // Alasan pembatalan pesanan
   total_price: number
   special_notes?: string | null
+  payment_proof_url?: string | null // URL to payment proof file
   created_at: string
   updated_at: string
   // Relationships
@@ -137,6 +138,8 @@ export interface InvoiceResource {
 export interface OrderFormData {
   phone_number: string
   address: string
+  company_name?: string
+  business_sector?: string
   special_notes?: string
   payment_proof: File
   products: Array<{

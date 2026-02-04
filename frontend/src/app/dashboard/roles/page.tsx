@@ -295,9 +295,16 @@ export default function RolesPage() {
 
       if (result) {
         toast.success("Role updated successfully")
-        setAssignedUsers((prev) =>
-          prev.map((u) => (u.id === userId ? result : u))
-        )
+        setAssignedUsers((prev) => {
+          const existingIndex = prev.findIndex((u) => u.id === userId)
+          if (existingIndex >= 0) {
+            // Update existing user
+            return prev.map((u, idx) => idx === existingIndex ? result : u)
+          } else {
+            // Add new user if not in list (shouldn't happen, but just in case)
+            return [...prev, result]
+          }
+        })
         setEditingUserId(null)
         setEditingRole("")
       }

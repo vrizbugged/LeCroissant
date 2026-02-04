@@ -26,6 +26,9 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
   SidebarRail,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
 } from "@/components/ui/sidebar"
 import { ordersApi } from "@/lib/api"
 import type { OrderResource } from "@/types/api"
@@ -56,12 +59,15 @@ const baseNavItems = [
     url: "/dashboard/orders",
     icon: ShoppingCartIcon,
   },
+]
+
+// Client Management (separate group)
+const clientManagementItems = [
   {
     title: "Client Management",
     url: "/dashboard/clients",
     icon: UsersIcon,
   },
-
 ]
 
 // Super Admin only navigation items
@@ -71,6 +77,10 @@ const superAdminNavItems = [
     url: "/dashboard/activity-logs",
     icon: ActivityIcon,
   },
+]
+
+// Role & Permission (separate group for Super Admin)
+const rolePermissionItems = [
   {
     title: "Role & Permission",
     url: "/dashboard/roles",
@@ -143,16 +153,19 @@ export function AdminSidebar() {
   }, [checkNewOrders])
 
   // Combine nav items based on role
-  const navItems = React.useMemo(() => {
-    const items = isSuperAdmin ? [...baseNavItems, ...superAdminNavItems] : baseNavItems
-    // Add notification badge to Manajemen Pesanan
-    return items.map(item => {
+  const mainNavItems = React.useMemo(() => {
+    // Add notification badge to Order Management
+    return baseNavItems.map(item => {
       if (item.url === '/dashboard/orders') {
         return { ...item, badge: newOrdersCount > 0 ? newOrdersCount : undefined }
       }
       return item
     })
-  }, [isSuperAdmin, newOrdersCount])
+  }, [newOrdersCount])
+
+  const adminNavItems = React.useMemo(() => {
+    return isSuperAdmin ? superAdminNavItems : []
+  }, [isSuperAdmin])
 
   return (
     <Sidebar 
@@ -177,10 +190,84 @@ export function AdminSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navItems.map(item => ({
+        {/* Main Navigation */}
+        <NavMain items={mainNavItems.map(item => ({
           ...item,
           isActive: pathname === item.url || pathname?.startsWith(item.url + '/'),
         }))} />
+
+        {/* Client Management Group */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Client Management</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {clientManagementItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={item.title}
+                    isActive={pathname === item.url || pathname?.startsWith(item.url + '/')}
+                  >
+                    <Link href={item.url}>
+                      {item.icon && <item.icon />}
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Super Admin Navigation */}
+        {isSuperAdmin && adminNavItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>System</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminNavItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={item.title}
+                      isActive={pathname === item.url || pathname?.startsWith(item.url + '/')}
+                    >
+                      <Link href={item.url}>
+                        {item.icon && <item.icon />}
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Role & Permission Group (Super Admin only) */}
+        {isSuperAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Access Control</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {rolePermissionItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={item.title}
+                      isActive={pathname === item.url || pathname?.startsWith(item.url + '/')}
+                    >
+                      <Link href={item.url}>
+                        {item.icon && <item.icon />}
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={{

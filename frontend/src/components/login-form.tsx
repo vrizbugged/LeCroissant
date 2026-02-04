@@ -166,7 +166,7 @@ export function LoginForm({
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full " disabled={loading}>
                   {loading ? "Logging in..." : "Login"}
                 </Button>
                 <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
@@ -215,7 +215,7 @@ export function LoginForm({
           </Form>
           <div className="relative hidden bg-muted md:block">
             <Image
-              src="/image/pain_au.png"
+              src="/image/painau.png"
               alt="Pain au Chocolat"
               width={500}
               height={500}

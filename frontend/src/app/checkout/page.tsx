@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { ArrowLeftIcon, Loader2, MapPinIcon, PhoneIcon, UploadIcon, XIcon, Building2Icon, CopyIcon } from "lucide-react"
+import { ArrowLeftIcon, Loader2, MapPinIcon, PhoneIcon, UploadIcon, XIcon, Building2Icon, CopyIcon, BriefcaseIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -30,6 +30,8 @@ import { toast } from "sonner"
 const checkoutFormSchema = z.object({
   phone_number: z.string().min(1, "Phone number is required"),
   address: z.string().min(1, "Address is required"),
+  company_name: z.string().optional(),
+  business_sector: z.string().optional(),
   special_notes: z.string().optional(),
   payment_proof: z.union([
     z.instanceof(File),
@@ -76,6 +78,8 @@ export default function CheckoutPage() {
     defaultValues: {
       phone_number: "",
       address: "",
+      company_name: "",
+      business_sector: "",
       special_notes: "",
       payment_proof: undefined,
     },
@@ -100,6 +104,8 @@ export default function CheckoutPage() {
           // 3. Kosong jika tidak ada data
           let phoneNumber = ''
           let address = ''
+          let companyName = ''
+          let businessSector = ''
           
           if (userData.client?.phone_number) {
             phoneNumber = userData.client.phone_number
@@ -111,6 +117,14 @@ export default function CheckoutPage() {
             address = userData.client.address
           } else if (userData.address) {
             address = userData.address
+          }
+          
+          if (userData.client?.company_name) {
+            companyName = userData.client.company_name
+          }
+          
+          if (userData.client?.business_sector) {
+            businessSector = userData.client.business_sector
           }
           
           // Fallback: Jika Client belum ada atau data kosong, coba ambil dari order terakhir
@@ -137,6 +151,12 @@ export default function CheckoutPage() {
           }
           if (address) {
             form.setValue('address', address, { shouldValidate: true })
+          }
+          if (companyName) {
+            form.setValue('company_name', companyName, { shouldValidate: true })
+          }
+          if (businessSector) {
+            form.setValue('business_sector', businessSector, { shouldValidate: true })
           }
           
           // Trigger validasi semua field setelah auto-fill selesai
@@ -227,6 +247,8 @@ export default function CheckoutPage() {
       const orderData = {
         phone_number: data.phone_number,
         address: data.address,
+        company_name: data.company_name || undefined,
+        business_sector: data.business_sector || undefined,
         special_notes: data.special_notes || undefined,
         payment_proof: data.payment_proof,
         products: items.map((item) => ({
@@ -424,7 +446,7 @@ export default function CheckoutPage() {
                           <FormItem>
                             <FormLabel className="flex items-center gap-2">
                               <MapPinIcon className="h-4 w-4 text-orange-600" />
-                              Alamat
+                              Address
                             </FormLabel>
                             <FormControl>
                               <Textarea
@@ -436,6 +458,54 @@ export default function CheckoutPage() {
                             </FormControl>
                             <FormDescription>
                               Your full address (can be edited if needed)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="company_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              <Building2Icon className="h-4 w-4 text-orange-600" />
+                              Company Name
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Company Name"
+                                {...field}
+                                disabled={loadingUser}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Your company name (optional)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="business_sector"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              <BriefcaseIcon className="h-4 w-4 text-orange-600" />
+                              Business Sector
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Hotel, Restaurant, etc."
+                                {...field}
+                                disabled={loadingUser}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Your business sector (optional)
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -478,7 +548,7 @@ export default function CheckoutPage() {
                         <div className="flex items-center gap-2">
                           <Building2Icon className="h-5 w-5 text-orange-600" />
                           <h3 className="font-semibold text-sm text-orange-900 dark:text-orange-100">
-                            Informasi Rekening Bank
+                              Bank Account Information
                           </h3>
                         </div>
                         <div className="space-y-3 text-sm">
@@ -487,7 +557,7 @@ export default function CheckoutPage() {
                             <span className="font-semibold text-foreground">{BANK_INFO.bankName}</span>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-muted-foreground min-w-[120px] font-medium">Nomor Rekening</span>
+                            <span className="text-muted-foreground min-w-[120px] font-medium">Account Number</span>
                             <div className="flex items-center gap-2">
                               <span className="font-mono font-semibold text-orange-600 dark:text-orange-400">
                                 {formatAccountNumber(BANK_INFO.accountNumber)}
@@ -498,19 +568,19 @@ export default function CheckoutPage() {
                                 size="icon"
                                 className="h-6 w-6 text-orange-600 hover:text-orange-700 hover:bg-orange-100 dark:hover:bg-orange-900/30"
                                 onClick={copyAccountNumber}
-                                title="Salin nomor rekening"
+                                title="Copy account number"
                               >
                                 <CopyIcon className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-muted-foreground min-w-[120px] font-medium">Atas Nama</span>
+                            <span className="text-muted-foreground min-w-[120px] font-medium">Account Holder</span>
                             <span className="font-semibold text-foreground">{BANK_INFO.accountHolder}</span>
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground pt-3 border-t border-orange-200 dark:border-orange-800">
-                          Silakan transfer sesuai dengan total pesanan ke rekening di atas, kemudian upload bukti pembayaran.
+                          Please transfer according to the total order to the account above, then upload payment proof.
                         </p>
                       </div>
 
@@ -519,7 +589,7 @@ export default function CheckoutPage() {
                         name="payment_proof"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>File Bukti Pembayaran</FormLabel>
+                            <FormLabel>Payment Proof File</FormLabel>
                             <FormControl>
                               <div className="space-y-3">
                                 {paymentProofPreview ? (
@@ -531,7 +601,7 @@ export default function CheckoutPage() {
                                           return paymentProof instanceof File && paymentProof.type.startsWith('image/') ? (
                                             <img
                                               src={paymentProofPreview}
-                                              alt="Preview bukti pembayaran"
+                                              alt="Payment proof preview"
                                               className="w-20 h-20 object-cover rounded"
                                             />
                                           ) : (
@@ -546,7 +616,7 @@ export default function CheckoutPage() {
                                               const paymentProof = form.watch('payment_proof')
                                               return paymentProof instanceof File 
                                                 ? paymentProof.name 
-                                                : 'File terpilih'
+                                                : 'Selected file'
                                             })()}
                                           </p>
                                           <p className="text-xs text-muted-foreground">
@@ -574,7 +644,7 @@ export default function CheckoutPage() {
                                   <div className="border-2 border-dashed rounded-lg p-6 text-center">
                                     <UploadIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                                     <p className="text-sm text-muted-foreground mb-2">
-                                      Upload bukti pembayaran (JPG, PNG, atau PDF)
+                                      Upload payment proof (JPG, PNG, or PDF)
                                     </p>
                                     <Input
                                       type="file"
@@ -588,14 +658,14 @@ export default function CheckoutPage() {
                                       variant="outline"
                                       onClick={() => document.getElementById('payment_proof_input')?.click()}
                                     >
-                                      Pilih File
+                                      Select File
                                     </Button>
                                   </div>
                                 )}
                               </div>
                             </FormControl>
                             <FormDescription>
-                              Upload bukti pembayaran Anda (maksimal 5MB). Format: JPG, PNG, atau PDF
+                              Upload your payment proof (maximum 5MB). Format: JPG, PNG, or PDF
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -612,7 +682,7 @@ export default function CheckoutPage() {
                       onClick={() => router.push("/cart")}
                       className="flex-1"
                     >
-                      Kembali ke Keranjang
+                      Back to Cart
                     </Button>
                     <Button
                       type="submit"
@@ -622,10 +692,10 @@ export default function CheckoutPage() {
                       {loading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Memproses...
+                          Processing...
                         </>
                       ) : (
-                        "Buat Pesanan"
+                        "Create Order"
                       )}
                     </Button>
                   </div>
@@ -637,7 +707,7 @@ export default function CheckoutPage() {
             <div className="lg:col-span-1">
               <Card className="sticky top-24">
                 <CardHeader>
-                  <CardTitle>Ringkasan Pesanan</CardTitle>
+                  <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Order Items */}
@@ -645,13 +715,22 @@ export default function CheckoutPage() {
                     {items.map((item) => (
                       <div key={item.product.id} className="flex gap-3 pb-3 border-b last:border-0">
                         <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
-                          {item.product.image_url ? (
+                          {(item.product.image_url || (item.product as any).gambar_url) ? (
                             <Image
-                              src={item.product.image_url}
+                              src={(item.product as any).gambar_url || item.product.image_url || ''}
                               alt={item.product.nama_produk}
                               fill
                               className="object-cover"
                               sizes="64px"
+                              unoptimized={true}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                                const parent = target.parentElement
+                                if (parent) {
+                                  parent.innerHTML = '<div class="flex items-center justify-center h-full bg-muted text-muted-foreground"><span class="text-xs">No Image</span></div>'
+                                }
+                              }}
                             />
                           ) : (
                             <div className="flex items-center justify-center h-full bg-muted text-muted-foreground">

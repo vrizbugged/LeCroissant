@@ -604,6 +604,16 @@ export const ordersApi = {
       formData.append('phone_number', data.phone_number)
       formData.append('address', data.address)
       
+      // Add company_name if exists and not empty
+      if (data.company_name && data.company_name.trim()) {
+        formData.append('company_name', data.company_name.trim())
+      }
+      
+      // Add business_sector if exists and not empty
+      if (data.business_sector && data.business_sector.trim()) {
+        formData.append('business_sector', data.business_sector.trim())
+      }
+      
       // Add products as array using bracket notation for Laravel
       data.products.forEach((product, index) => {
         formData.append(`products[${index}][id]`, product.id.toString())
