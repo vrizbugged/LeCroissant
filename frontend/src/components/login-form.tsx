@@ -22,6 +22,12 @@ import { Input } from "@/components/ui/input"
 import { authApi } from "@/lib/api"
 import { toast } from "sonner"
 
+interface LoginFormProps extends React.ComponentProps<"div"> {
+  hideSignUp?: boolean; // Tanda tanya artinya opsional (boleh ada boleh tidak)
+}
+
+
+
 const loginFormSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(1, "Password is required"),
@@ -31,8 +37,10 @@ type LoginFormValues = z.infer<typeof loginFormSchema>
 
 export function LoginForm({
   className,
+  hideSignUp = false,
   ...props
-}: React.ComponentProps<"div">) {
+
+}: LoginFormProps) {
   const router = useRouter()
   const [loading, setLoading] = React.useState(false)
 
@@ -44,7 +52,7 @@ export function LoginForm({
     },
   })
 
-  // --- BAGIAN INI YANG DIUPDATE ---
+
   const onSubmit = async (data: LoginFormValues) => {
     setLoading(true)
     try {
@@ -58,16 +66,16 @@ export function LoginForm({
         const token = result.token
         const user = result.user
 
-        // Simpan ke LocalStorage (WAJIB AGAR NAVBAR BERUBAH)
+  
         localStorage.setItem("token", token)
-        localStorage.setItem("auth_token", token) // Simpan juga di auth_token untuk konsistensi
+        localStorage.setItem("auth_token", token)
         if (user) {
           localStorage.setItem("user", JSON.stringify(user))
         }
 
         toast.success("Login successful!")
 
-        // Dispatch event untuk cart context agar cart di-reload
+
         window.dispatchEvent(new Event("authChanged"))
 
         // Redirect Berdasarkan Role
@@ -82,7 +90,7 @@ export function LoginForm({
           router.push("/") // Masuk ke homepage customer
         }
         
-        // Refresh agar komponen lain (seperti Navbar) tahu ada perubahan data
+
         router.refresh()
       } else {
         // Jika login sukses tapi token tidak ditemukan di response
@@ -119,10 +127,23 @@ export function LoginForm({
             <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 md:p-8">
               <div className="flex flex-col gap-6">
                 <div className="flex flex-col items-center text-center">
+
+                  {!hideSignUp && (
                   <h1 className="text-2xl font-bold">Welcome back</h1>
+                  )}
+
+                {hideSignUp && (
+                  <div>
+                  <h1 className="text-2xl font-bold">Welcome back Admin! </h1>
+                  <p className="text-balance text-muted-foreground">Let's continue where you left off.</p>
+                  </div>
+                )}
+
+                  {!hideSignUp && (
                   <p className="text-balance text-muted-foreground">
                     Login to your account
                   </p>
+                  )}
                 </div>
                 <FormField
                   control={form.control}
@@ -169,11 +190,11 @@ export function LoginForm({
                 <Button type="submit" className="w-full " disabled={loading}>
                   {loading ? "Logging in..." : "Login"}
                 </Button>
-                <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
+                {/* <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                   <span className="relative z-10 bg-background px-2 text-muted-foreground">
                     Or continue with
                   </span>
-                </div>
+                </div> */}
                 {/* <div className="grid grid-cols-3 gap-4">
                   ... (Bagian Social Login tetap sama) ...
                   <Button variant="outline" type="button" className="w-full">
@@ -204,12 +225,16 @@ export function LoginForm({
                     <span className="sr-only">Login with Meta</span>
                   </Button>
                 </div> */}
+
+                {!hideSignUp && (
                 <div className="text-center text-sm">
                   Don&apos;t have an account?{" "}
                   <Link href="/signup" className="underline underline-offset-4">
                     Sign up
                   </Link>
                 </div>
+                )}
+
               </div>
             </form>
           </Form>
@@ -224,10 +249,13 @@ export function LoginForm({
           </div>
         </CardContent>
       </Card>
+
+      {/* {!hideSignUp && (
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
         By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
         and <a href="#">Privacy Policy</a>.
       </div>
+      )} */}
     </div>
   )
 }

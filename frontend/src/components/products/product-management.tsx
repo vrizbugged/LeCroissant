@@ -525,9 +525,9 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                           <Button variant="ghost" size="icon" onClick={() => handleEdit(product)}>
                             <PencilIcon className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id)}>
+                          {/* <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id)}>
                             <TrashIcon className="h-4 w-4" />
-                          </Button>
+                          </Button> */}
                         </div>
                       </TableCell>
                     </TableRow>

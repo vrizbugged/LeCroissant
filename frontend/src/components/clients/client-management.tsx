@@ -90,7 +90,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
       company_name: "",
       business_sector: "",
       address: "",
-      status: "Pending", // Default value untuk klien baru
+      status: "Active", // Default value untuk klien baru
     },
   })
 
@@ -103,7 +103,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
         company_name: editingClient.company_name || "",
         business_sector: editingClient.business_sector || "",
         address: editingClient.address || "",
-        status: editingClient.status || "Pending",
+        status: editingClient.status || "Active",
       })
     } else {
       form.reset({
@@ -113,7 +113,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
         company_name: "",
         business_sector: "",
         address: "",
-        status: "Pending",
+        status: "Active",
       })
     }
   }, [editingClient, form])
@@ -208,10 +208,10 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
     if (!status) return null
     
     const statusConfig: Record<string, { label: string; className: string }> = {
-      Pending: {
-        label: "Pending",
-        className: "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800",
-      },
+      // Pending: {
+      //   label: "Pending",
+      //   className: "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800",
+      // },
       Aktif: {
         label: "Active",
         className: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
@@ -387,7 +387,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Pending">Pending</SelectItem>
+                              {/* <SelectItem value="Pending">Pending</SelectItem> */}
                               <SelectItem value="Active">Active</SelectItem>
                               <SelectItem value="Inactive">Inactive</SelectItem>
                             </SelectContent>
@@ -481,7 +481,12 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                           <TableCell>{getStatusBadge(client.status)}</TableCell>
                           <TableCell>{client.total_orders_count || 0}</TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
+
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(client)}>
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+
+                            {/* <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-8 w-8 p-0">
                                   <span className="sr-only">Open menu</span>
@@ -510,7 +515,7 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
                                   Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
-                            </DropdownMenu>
+                            </DropdownMenu> */}
                           </TableCell>
                         </TableRow>
                         {isExpanded && (
