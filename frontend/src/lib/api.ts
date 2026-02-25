@@ -26,6 +26,8 @@ import type {
   AuthResponse,
   AuthLoginData,
   AuthRegisterData,
+  ForgotPasswordData,
+  ResetPasswordData,
   ActivityLogResource,
   ActivityLogListParams,
   RoleResource,
@@ -254,6 +256,64 @@ export const authApi = {
     } catch (error) {
       // Re-throw error agar bisa ditangani di component dengan message yang jelas
       throw error
+    }
+  },
+
+  /**
+   * Request password reset link
+   */
+  forgotPassword: async (data: ForgotPasswordData): Promise<boolean> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(data),
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Failed to send reset link' }))
+        throw new Error(error.message || 'Failed to send reset link')
+      }
+
+      return true
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error('Failed to send reset link')
+    }
+  },
+
+  /**
+   * Reset password using token from email
+   */
+  resetPassword: async (data: ResetPasswordData): Promise<boolean> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(data),
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Failed to reset password' }))
+        throw new Error(error.message || 'Failed to reset password')
+      }
+
+      return true
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error('Failed to reset password')
     }
   },
 

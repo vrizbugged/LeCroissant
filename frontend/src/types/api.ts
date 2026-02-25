@@ -295,6 +295,17 @@ export interface AuthRegisterData {
   password_confirmation: string
 }
 
+export interface ForgotPasswordData {
+  email: string
+}
+
+export interface ResetPasswordData {
+  token: string
+  email: string
+  password: string
+  password_confirmation: string
+}
+
 // API Response wrapper
 export interface ApiResponse<T> {
   success: boolean

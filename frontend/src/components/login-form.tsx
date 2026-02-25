@@ -24,6 +24,7 @@ import { toast } from "sonner"
 
 interface LoginFormProps extends React.ComponentProps<"div"> {
   hideSignUp?: boolean; // Tanda tanya artinya opsional (boleh ada boleh tidak)
+  hideForgotPassword?: boolean;
 }
 
 
@@ -38,6 +39,7 @@ type LoginFormValues = z.infer<typeof loginFormSchema>
 export function LoginForm({
   className,
   hideSignUp = false,
+  hideForgotPassword = false,
   ...props
 
 }: LoginFormProps) {
@@ -172,12 +174,16 @@ export function LoginForm({
                       <div className="grid gap-2">
                         <div className="flex items-center">
                           <FormLabel>Password</FormLabel>
-                          <a
-                            href="#"
+
+                          {!hideForgotPassword && (
+                          <Link
+                            href="/forgot-password"
                             className="ml-auto text-sm underline-offset-2 hover:underline"
                           >
-                            {/* Forgot your password? */}
-                          </a>
+                            Forgot your password?
+                          </Link>
+                          )}
+
                         </div>
                         <FormControl>
                           <Input type="password" placeholder="••••••••" {...field} />
