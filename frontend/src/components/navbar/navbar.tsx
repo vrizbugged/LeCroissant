@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -19,6 +19,7 @@ import type { UserResource, OrderResource } from "@/types/api"
 
 export function Navbar() {
   const router = useRouter()
+  const pathname = usePathname()
   // State untuk menyimpan status login
   const [isLoggedIn, setIsLoggedIn] = React.useState(false)
   const [cartItemCount, setCartItemCount] = React.useState(0)
@@ -223,6 +224,15 @@ export function Navbar() {
     router.refresh()                 // Refresh halaman agar data bersih
   }
 
+  const handleHomeClick = () => {
+    if (pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" })
+      return
+    }
+
+    router.push("/")
+  }
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm bg-white/50 border-b border-white/20">
       <div className="container mx-auto px-4">
@@ -244,11 +254,13 @@ export function Navbar() {
 
             {/* Menu Navigasi (Hanya di Desktop) */}
             <div className="hidden md:flex items-center gap-1">
-              <Button asChild variant="ghost" className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20">
-                <Link href="/">
-                  <House className="h-4 w-4 mr-1" />  
-                  Home
-                </Link>
+              <Button
+                variant="ghost"
+                className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20"
+                onClick={handleHomeClick}
+              >
+                <House className="h-4 w-4 mr-1" />
+                Home
               </Button>
               <span className="text-black/70 mx-1">·</span>
               

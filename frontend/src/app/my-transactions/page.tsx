@@ -42,6 +42,7 @@ export default function MyTransactionsPage() {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [previousStatus, setPreviousStatus] = React.useState<OrderResource['status'] | null>(null)
+  const [confirmingPickupId, setConfirmingPickupId] = React.useState<number | null>(null)
   // State untuk mengelola expanded/collapsed state per order ID
   const [expandedOrders, setExpandedOrders] = React.useState<Set<number>>(new Set())
   // State untuk mengelola invoice preview modal
@@ -70,6 +71,40 @@ export default function MyTransactionsPage() {
     setInvoiceOpen(true)
   }
 
+  const canClientConfirmPickup = (order: OrderResource) => {
+    if (order.status === 'siap_di_pickup') return true
+    return order.status === 'selesai' && order.completed_by === 'admin' && !order.client_picked_up_at
+  }
+
+  const getClientOrderStatusLabel = (order: OrderResource) => {
+    if (order.status === 'selesai' && order.completed_by === 'admin' && !order.client_picked_up_at) {
+      return 'Menunggu Konfirmasi Pickup Anda'
+    }
+    if (order.status === 'selesai' && order.completed_by === 'system') {
+      return 'Pesanan Selesai (Otomatis)'
+    }
+    return statusLabels[order.status]
+  }
+
+  const handleConfirmPickup = async (orderId: number) => {
+    setConfirmingPickupId(orderId)
+    try {
+      const updatedOrder = await ordersApi.confirmPickup(orderId)
+      if (!updatedOrder) {
+        toast.error("Gagal konfirmasi pickup")
+        return
+      }
+
+      setOrders((prev) => prev.map((order) => (order.id === orderId ? updatedOrder : order)))
+      toast.success("Pickup berhasil dikonfirmasi. Pesanan selesai.")
+    } catch (err) {
+      console.error("Error confirming pickup:", err)
+      toast.error("Terjadi kesalahan saat konfirmasi pickup")
+    } finally {
+      setConfirmingPickupId(null)
+    }
+  }
+
   // Fetch orders
   const fetchMyOrders = React.useCallback(async (silent = false) => {
     if (!silent) {
@@ -86,14 +121,7 @@ export default function MyTransactionsPage() {
         if (sortedOrders.length > 0) {
           const currentStatus = sortedOrders[0].status
           if (previousStatus !== null && previousStatus !== currentStatus) {
-            const statusLabels: Record<OrderResource['status'], string> = {
-              menunggu_konfirmasi: 'Menunggu Konfirmasi',
-              diproses: 'Diproses',
-              siap_di_pickup: 'Siap Di-Pickup',
-              selesai: 'Pesanan Selesai',
-              dibatalkan: 'Dibatalkan',
-            }
-            toast.success(`Status pesanan #${sortedOrders[0].id} berubah menjadi: ${statusLabels[currentStatus]}`)
+            toast.success(`Status pesanan #${sortedOrders[0].id} berubah menjadi: ${getClientOrderStatusLabel(sortedOrders[0])}`)
           }
           setPreviousStatus(currentStatus)
         }
@@ -359,25 +387,50 @@ export default function MyTransactionsPage() {
                     </div>
                   )}
 
-                  {/* Button Cetak Invoice - disable jika dibatalkan */}
-                  <div className="pt-4 border-t">
-                    {latestOrder.status === 'dibatalkan' ? (
-                      <Button
-                        disabled
-                        className="bg-gray-400 text-white cursor-not-allowed"
-                      >
-                        <Printer className="h-4 w-4 mr-2" />
-                        Invoice Cannot Be Printed
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => handleOpenInvoice(latestOrder)}
-                        className="bg-orange-600 hover:bg-orange-700 text-white"
-                      >
-                        <Printer className="h-4 w-4 mr-2" />
-                        Print Invoice
-                      </Button>
+                  {/* Aksi Pesanan */}
+                  <div className="pt-4 border-t space-y-3">
+                    {latestOrder.status === 'selesai' && latestOrder.completed_by === 'admin' && !latestOrder.client_picked_up_at && (
+                      <div className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-md p-3">
+                        Admin sudah menandai pesanan selesai. Silakan konfirmasi saat Anda benar-benar sudah pickup di toko.
+                      </div>
                     )}
+
+                    <div className="flex flex-wrap gap-2">
+                      {canClientConfirmPickup(latestOrder) && (
+                        <Button
+                          onClick={() => handleConfirmPickup(latestOrder.id)}
+                          disabled={confirmingPickupId === latestOrder.id}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          {confirmingPickupId === latestOrder.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Mengonfirmasi...
+                            </>
+                          ) : (
+                            "I have already picked up the order!"
+                          )}
+                        </Button>
+                      )}
+
+                      {latestOrder.status === 'dibatalkan' ? (
+                        <Button
+                          disabled
+                          className="bg-gray-400 text-white cursor-not-allowed"
+                        >
+                          <Printer className="h-4 w-4 mr-2" />
+                          Invoice Cannot Be Printed
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleOpenInvoice(latestOrder)}
+                          className="bg-orange-600 hover:bg-orange-700 text-white"
+                        >
+                          <Printer className="h-4 w-4 mr-2" />
+                          Print Invoice
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Detail Produk Pesanan Terbaru - Collapsible */}
@@ -447,7 +500,7 @@ export default function MyTransactionsPage() {
                           </CardDescription>
                         </div>
                         <Badge className={statusColors[order.status]}>
-                          {statusLabels[order.status]}
+                          {getClientOrderStatusLabel(order)}
                         </Badge>
                       </div>
                     </CardHeader>
@@ -558,27 +611,52 @@ export default function MyTransactionsPage() {
                           </div>
                         )}
 
-                        {/* Button Cetak Invoice - disable jika dibatalkan */}
-                        <div className="pt-4 border-t">
-                          {order.status === 'dibatalkan' ? (
-                            <Button
-                              disabled
-                              variant="outline"
-                              className="w-full sm:w-auto bg-gray-400 text-white cursor-not-allowed"
-                            >
-                              <Printer className="h-4 w-4 mr-2" />
-                              Invoice Cannot Be Printed
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={() => handleOpenInvoice(order)}
-                              variant="outline"
-                              className="w-full sm:w-auto"
-                            >
-                              <Printer className="h-4 w-4 mr-2" />
-                              Print Invoice
-                            </Button>
+                        {/* Aksi Pesanan */}
+                        <div className="pt-4 border-t space-y-3">
+                          {order.status === 'selesai' && order.completed_by === 'admin' && !order.client_picked_up_at && (
+                            <div className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-md p-3">
+                              Status selesai dari admin. Konfirmasi pickup jika pesanan sudah diambil.
+                            </div>
                           )}
+
+                          <div className="flex flex-wrap gap-2">
+                            {canClientConfirmPickup(order) && (
+                              <Button
+                                onClick={() => handleConfirmPickup(order.id)}
+                                disabled={confirmingPickupId === order.id}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                {confirmingPickupId === order.id ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Mengonfirmasi...
+                                  </>
+                                ) : (
+                                  "Saya Sudah Pickup"
+                                )}
+                              </Button>
+                            )}
+
+                            {order.status === 'dibatalkan' ? (
+                              <Button
+                                disabled
+                                variant="outline"
+                                className="w-full sm:w-auto bg-gray-400 text-white cursor-not-allowed"
+                              >
+                                <Printer className="h-4 w-4 mr-2" />
+                                Invoice Cannot Be Printed
+                              </Button>
+                            ) : (
+                              <Button
+                                onClick={() => handleOpenInvoice(order)}
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                              >
+                                <Printer className="h-4 w-4 mr-2" />
+                                Print Invoice
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </CardContent>

@@ -33,7 +33,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
-import { Eye, FileText, Image as ImageIcon, Download, FileDown } from "lucide-react"
+import { Eye, FileText, Image as ImageIcon, Download, FileDown, ChevronDown, ChevronRight, Package, StickyNote } from "lucide-react"
 
 const statusColors: Record<OrderResource['status'], string> = {
   menunggu_konfirmasi: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
@@ -59,6 +59,16 @@ const statusOptions: OrderResource['status'][] = [
   'dibatalkan',
 ]
 
+const getOrderStatusLabel = (order: OrderResource): string => {
+  if (order.status === 'selesai' && order.completed_by === 'admin' && !order.client_picked_up_at) {
+    return 'Done (Awaiting Client Confirm)'
+  }
+  if (order.status === 'selesai' && order.completed_by === 'system') {
+    return 'Done (Auto)'
+  }
+  return statusLabels[order.status]
+}
+
 interface OrderManagementProps {
   initialOrders: OrderResource[]
 }
@@ -69,6 +79,7 @@ type SortDirection = 'asc' | 'desc'
 export function OrderManagement({ initialOrders }: OrderManagementProps) {
   const router = useRouter()
   const [orders, setOrders] = React.useState<OrderResource[]>(initialOrders || [])
+  const [expandedRows, setExpandedRows] = React.useState<Set<number>>(new Set())
   const [sortField, setSortField] = React.useState<SortField>(null)
   const [sortDirection, setSortDirection] = React.useState<SortDirection>('desc')
   const [statusFilter, setStatusFilter] = React.useState<OrderResource['status'] | null>(null)
@@ -123,6 +134,43 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
     handleStatusChange(cancelDialog.orderId, 'dibatalkan', cancellationReason.trim())
     setCancelDialog({ open: false, orderId: null })
     setCancellationReason("")
+  }
+
+  const toggleRow = (orderId: number) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev)
+      if (next.has(orderId)) {
+        next.delete(orderId)
+      } else {
+        next.add(orderId)
+      }
+      return next
+    })
+  }
+
+  const getOrderItems = (order: OrderResource) => {
+    if (order.products && order.products.length > 0) {
+      return order.products.map((product) => ({
+        name: product.name,
+        quantity: product.pivot?.quantity ?? 0,
+        unitPrice: product.pivot?.price_at_purchase ?? product.price_b2b ?? 0,
+        subtotal:
+          (product.pivot?.quantity ?? 0) *
+          (product.pivot?.price_at_purchase ?? product.price_b2b ?? 0),
+      }))
+    }
+
+    const rawItems = (order as unknown as { items?: Array<{ product_name?: string; quantity?: number; price_at_purchase?: number; subtotal?: number }> }).items
+    if (rawItems && rawItems.length > 0) {
+      return rawItems.map((item) => ({
+        name: item.product_name || "Produk",
+        quantity: item.quantity ?? 0,
+        unitPrice: item.price_at_purchase ?? 0,
+        subtotal: item.subtotal ?? (item.quantity ?? 0) * (item.price_at_purchase ?? 0),
+      }))
+    }
+
+    return []
   }
 
   const formatCurrency = (value: number) => {
@@ -271,7 +319,7 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
           phoneNumber,
           address,
           formatDateForCSV(order.delivery_date),
-          statusLabels[order.status],
+          getOrderStatusLabel(order),
           order.total_price.toString(), // Use raw number for CSV
           order.special_notes || '',
           formatDateForCSV(order.created_at),
@@ -378,6 +426,7 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12"></TableHead>
                   <TableHead>Order ID</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Date</TableHead>
@@ -389,7 +438,7 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
               <TableBody>
                 {sortedOrders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       {statusFilter 
                         ? `No orders with status "${statusLabels[statusFilter]}"`
                         : orders.length === 0
@@ -401,81 +450,138 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
                 ) : (
                   sortedOrders.map((order) => {
                     const isNew = isOrderNew(order.id, order.created_at)
+                    const isExpanded = expandedRows.has(order.id)
+                    const orderItems = getOrderItems(order)
+                    const clientNote =
+                      order.special_notes ||
+                      (order as unknown as { notes?: string | null }).notes ||
+                      "-"
                     return (
-                      <TableRow 
-                        key={order.id} 
-                        className={isNew ? "bg-green-50/50 dark:bg-green-950/10" : ""}
-                        onMouseEnter={() => {
-                          if (isNew) {
-                            markOrderAsViewed(order.id)
-                          }
-                        }}
-                      >
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <span>#{order.id}</span>
-                            {isNew && (
-                              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-300 text-xs">
-                                New
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">
-                            {order.client?.name || order.user?.name || 'N/A'}
-                          </div>
-                          {(order.client?.company_name || order.user?.company_name) && (
-                            <div className="text-sm text-muted-foreground">
-                              {order.client?.company_name || order.user?.company_name}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{formatDate(order.delivery_date)}</TableCell>
-                      <TableCell>{formatCurrency(order.total_price)}</TableCell>
-                      <TableCell>
-                        <Badge className={statusColors[order.status]}>
-                          {statusLabels[order.status]}
-                        </Badge>
-                      </TableCell>
-                      {/* GANTI BAGIAN TABLE CELL AKSI INI */}
-                      <TableCell>
-                        {/* Gunakan Flexbox untuk memaksa elemen ke kanan dengan rapi */}
-                        <div className="flex items-center justify-end gap-2">
-                          {/* Payment Proof Button */}
-                          {order.payment_proof_url && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setPaymentProofDialog({ open: true, order })}
-                              className="h-8"
-                              title="View Payment Proof"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Select
-                            value={order.status}
-                            onValueChange={(value) =>
-                              handleSelectChange(order.id, value as OrderResource['status'])
+                      <React.Fragment key={order.id}>
+                        <TableRow
+                          className={isNew ? "bg-green-50/50 dark:bg-green-950/10" : ""}
+                          onMouseEnter={() => {
+                            if (isNew) {
+                              markOrderAsViewed(order.id)
                             }
-                          >
-                            <SelectTrigger className="w-[140px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {statusOptions.map((status) => (
-                                <SelectItem key={status} value={status}>
-                                  {statusLabels[status]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                          }}
+                        >
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => toggleRow(order.id)}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <span>#{order.id}</span>
+                              {isNew && (
+                                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-300 text-xs">
+                                  New
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">
+                                {order.client?.name || order.user?.name || 'N/A'}
+                              </div>
+                              {(order.client?.company_name || order.user?.company_name) && (
+                                <div className="text-sm text-muted-foreground">
+                                  {order.client?.company_name || order.user?.company_name}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{formatDate(order.delivery_date)}</TableCell>
+                          <TableCell>{formatCurrency(order.total_price)}</TableCell>
+                          <TableCell>
+                            <Badge className={statusColors[order.status]}>
+                              {getOrderStatusLabel(order)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-2">
+                              {order.payment_proof_url && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setPaymentProofDialog({ open: true, order })}
+                                  className="h-8"
+                                  title="View Payment Proof"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Select
+                                value={order.status}
+                                onValueChange={(value) =>
+                                  handleSelectChange(order.id, value as OrderResource['status'])
+                                }
+                              >
+                                <SelectTrigger className="w-[140px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {statusOptions.map((status) => (
+                                    <SelectItem key={status} value={status}>
+                                      {statusLabels[status]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {isExpanded && (
+                          <TableRow>
+                            <TableCell colSpan={7} className="bg-muted/30 p-4">
+                              <div className="grid gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-sm font-semibold">
+                                    <Package className="h-4 w-4 text-muted-foreground" />
+                                    Ordered Items
+                                  </div>
+                                  {orderItems.length > 0 ? (
+                                    <div className="space-y-2">
+                                      {orderItems.map((item, idx) => (
+                                        <div key={`${order.id}-item-${idx}`} className="rounded-md border bg-background p-3">
+                                          <p className="font-medium">{item.name}</p>
+                                          <p className="text-sm text-muted-foreground">
+                                            Qty {item.quantity} x {formatCurrency(item.unitPrice)} = {formatCurrency(item.subtotal)}
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground">No item details available.</p>
+                                  )}
+                                </div>
+
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-sm font-semibold">
+                                    <StickyNote className="h-4 w-4 text-muted-foreground" />
+                                    Client Note
+                                  </div>
+                                  <div className="rounded-md border bg-background p-3">
+                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{clientNote}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
                     )
                   })
                 )}

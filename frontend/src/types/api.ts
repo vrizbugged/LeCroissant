@@ -37,6 +37,9 @@ export interface OrderResource {
   user_id?: number // Deprecated, use client instead
   delivery_date: string
   status: 'menunggu_konfirmasi' | 'diproses' | 'siap_di_pickup' | 'selesai' | 'dibatalkan'
+  completed_by?: 'admin' | 'client' | 'system' | null
+  admin_completed_at?: string | null
+  client_picked_up_at?: string | null
   cancellation_reason?: string | null // Alasan pembatalan pesanan
   total_price: number
   special_notes?: string | null

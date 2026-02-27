@@ -26,6 +26,14 @@ import { useCart } from "@/contexts/cart-context"
 import { ordersApi, authApi } from "@/lib/api"
 import type { UserResource } from "@/types/api"
 import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 const checkoutFormSchema = z.object({
   phone_number: z.string().min(1, "Phone number is required"),
@@ -62,6 +70,7 @@ const BANK_INFO = {
   accountNumber: "1234567890",
   accountHolder: "PT Le Croissant",
 }
+const SALES_CONTACT_URL = "https://api.whatsapp.com/send/?phone=6282247644041&text&type=phone_number&app_absent=0"
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -71,6 +80,7 @@ export default function CheckoutPage() {
   const [loadingUser, setLoadingUser] = React.useState(true)
   const [paymentProofPreview, setPaymentProofPreview] = React.useState<string | null>(null)
   const [orderSuccess, setOrderSuccess] = React.useState(false) // Flag untuk mencegah redirect ke cart setelah order berhasil
+  const [checkoutConfirmOpen, setCheckoutConfirmOpen] = React.useState(false)
 
   // Initialize form first
   const form = useForm<CheckoutFormValues>({
@@ -284,6 +294,14 @@ export default function CheckoutPage() {
     }
   }
 
+  const handleOpenCheckoutConfirm = form.handleSubmit(() => {
+    setCheckoutConfirmOpen(true)
+  })
+
+  const handleConfirmCheckout = async () => {
+    await form.handleSubmit(onSubmit)()
+  }
+
   const handlePaymentProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -405,7 +423,7 @@ export default function CheckoutPage() {
             {/* Checkout Form */}
             <div className="lg:col-span-2 space-y-6">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={handleOpenCheckoutConfirm} className="space-y-6">
                   {/* Contact Information */}
                   <Card>
                     <CardHeader>
@@ -778,6 +796,52 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={checkoutConfirmOpen} onOpenChange={setCheckoutConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Checkout</DialogTitle>
+            <DialogDescription>
+              Are you sure want to checkout? Contact our sales here if you want to cancel order.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-sm">
+            <a
+              href={SALES_CONTACT_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-orange-600 hover:text-orange-700 underline underline-offset-4"
+            >
+              Contact Sales (WhatsApp)
+            </a>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCheckoutConfirmOpen(false)}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmCheckout}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Yes, Checkout"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

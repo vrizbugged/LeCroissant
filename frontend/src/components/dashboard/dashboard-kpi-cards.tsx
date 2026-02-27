@@ -40,17 +40,17 @@ export function DashboardKPICards({ stats }: DashboardKPICardsProps) {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Total pendapatan keseluruhan <TrendingUpIcon className="size-4" />
+            Total Revenue <TrendingUpIcon className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            Semua transaksi yang telah selesai
+            All transactions that have been completed
           </div>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader className="relative">
-          <CardDescription>Pesanan Pending</CardDescription>
+          <CardDescription>Pending Orders</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
             {stats?.pesanan_pending ?? 0}
           </CardTitle>
@@ -62,56 +62,56 @@ export function DashboardKPICards({ stats }: DashboardKPICardsProps) {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Menunggu verifikasi <TrendingUpIcon className="size-4" />
+            Waiting for Verification <TrendingUpIcon className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            Pesanan yang perlu ditinjau
+            Orders that need to be reviewed
           </div>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader className="relative">
-          <CardDescription>Produk Aktif</CardDescription>
+          <CardDescription>Active Products</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
             {stats?.produk_aktif ?? 0}
           </CardTitle>
           <div className="absolute right-4 top-4">
             <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
               <TrendingUpIcon className="size-3" />
-              Aktif
+              Active
             </Badge>
           </div>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Produk tersedia <TrendingUpIcon className="size-4" />
+            Available Products <TrendingUpIcon className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            Total produk dalam katalog
+            Total products in the catalog
           </div>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader className="relative">
-          <CardDescription>Total Klien B2B</CardDescription>
+          <CardDescription>Total B2B Clients</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
             {stats?.total_klien_b2b ?? 0}
           </CardTitle>
           <div className="absolute right-4 top-4">
             <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
               <TrendingUpIcon className="size-3" />
-              Klien
+              Clients
             </Badge>
           </div>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Klien terdaftar <TrendingUpIcon className="size-4" />
+            Registered Clients <TrendingUpIcon className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            Total klien B2B aktif
+            Total B2B Clients
           </div>
         </CardFooter>
       </Card>

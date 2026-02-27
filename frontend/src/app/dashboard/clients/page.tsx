@@ -16,6 +16,10 @@ export default function ClientsPage() {
       setError(null)
       try {
         const clientsData = await clientsApi.getAll()
+
+        console.log("TOTAL KLIEN DARI API:", clientsData);
+        console.log("DATA LENGKAP KLIEN:", clientsData.length);
+
         setClients(clientsData || [])
       } catch (err) {
         console.error("Error fetching clients:", err)

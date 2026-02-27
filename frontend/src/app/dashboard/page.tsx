@@ -39,6 +39,8 @@ export default function DashboardPage() {
         dashboardApi.getChartData(),
       ])
 
+      console.log("Data Stats dari Backend:", statsData);
+
       if (statsData) {
         setStats(statsData)
       }

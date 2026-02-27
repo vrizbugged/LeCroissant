@@ -54,7 +54,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 const productFormSchema = z.object({
   nama_produk: z.string().min(1, "Product name is required"),
   deskripsi: z.string().min(1, "Description is required"),
-  harga_grosir: z.number().min(0, "Price must be greater than 0"),
+  harga_grosir: z.number().gt(0, "Price must be greater than 0"),
   min_order: z.number().min(1, "Minimum order must be greater than 0").optional(),
   // Gambar bisa berupa File (upload baru), String (URL lama), atau kosong
   gambar: z.union([
@@ -301,6 +301,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                               <Input
                                 type="number"
                                 placeholder="0"
+                                min={1}
                                 {...field}
                                 onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                               />
@@ -376,7 +377,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                                 >
                                   Upload File
                                 </Button>
-                                {/* Tombol URL Opsional */}
+                                {/* Tombol URL Opsional
                                 <Button
                                   type="button"
                                   variant={uploadType === 'url' ? 'default' : 'outline'}
@@ -390,7 +391,7 @@ export function ProductManagement({ initialProducts }: ProductManagementProps) {
                                   }}
                                 >
                                   Use URL
-                                </Button>
+                                </Button> */}
                               </div>
                               
                               {uploadType === 'file' ? (

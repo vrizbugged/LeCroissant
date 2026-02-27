@@ -792,6 +792,22 @@ export const ordersApi = {
   },
 
   /**
+   * Confirm order pickup by client (finalizes done status by client)
+   */
+  confirmPickup: async (id: number): Promise<OrderResource | null> => {
+    try {
+      const response = await apiRequest<ApiResponse<OrderResource>>(`/my-orders/${id}/confirm-pickup`, {
+        method: 'PATCH',
+      })
+      if (!response) return null
+      return response.data
+    } catch (error) {
+      console.error('Error confirming pickup:', error)
+      return null
+    }
+  },
+
+  /**
    * Get order report (Admin only - requires permission)
    * Returns summary and orders within date range
    */
