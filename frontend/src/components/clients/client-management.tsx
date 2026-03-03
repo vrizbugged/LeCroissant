@@ -266,14 +266,14 @@ export function ClientManagement({ initialClients }: ClientManagementProps) {
     <div className="px-4 lg:px-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Client Management</CardTitle>
               <CardDescription>Manage client data and verify account</CardDescription>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={handleAdd}>
+                <Button onClick={handleAdd} className="w-full sm:w-auto">
                   <PlusIcon className="mr-2 h-4 w-4" />
                   Add Client
                 </Button>

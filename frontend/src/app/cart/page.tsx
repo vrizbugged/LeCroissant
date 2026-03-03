@@ -67,10 +67,10 @@ export default function CartPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-8 pt-24 md:pt-28">
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 sm:gap-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">My Cart</h1>
-            <p className="text-muted-foreground mt-1">Review products you will order</p>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">My Cart</h1>
+            <p className="mt-1 text-sm text-muted-foreground sm:text-base">Review products you will order</p>
           </div>
 
           {items.length === 0 ? (
@@ -82,7 +82,7 @@ export default function CartPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2 space-y-4">
                 {items.map((item) => {
                   // GUARD CLAUSE: Cek apakah item/product rusak agar tidak blank
@@ -90,10 +90,10 @@ export default function CartPage() {
 
                   return (
                     <Card key={item.product.id || Math.random()}>
-                      <CardContent className="p-4">
-                        <div className="flex gap-4">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex gap-3 sm:gap-4">
                           {/* GAMBAR PRODUK */}
-                          <div className="relative w-24 h-24 md:w-32 md:h-32 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
+                          <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-muted sm:h-28 sm:w-28 md:h-32 md:w-32">
                             {/* Gunakan Optional Chaining (?.) dan Fallback logic */}
                             {(item.product.image_url || item.product.image_url) ? (
                               <Image
@@ -101,7 +101,7 @@ export default function CartPage() {
                                 alt={item.product.nama_produk || "Produk"}
                                 fill
                                 className="object-cover"
-                                sizes="(max-width: 640px) 96px, 128px"
+                                sizes="(max-width: 640px) 80px, 128px"
                                 unoptimized={true}
                                 // Handle error gambar tanpa crash
                                 onError={(e) => { e.currentTarget.style.display = 'none' }} 
@@ -117,31 +117,31 @@ export default function CartPage() {
                           <div className="flex-1 flex flex-col gap-2">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <h3 className="font-semibold text-lg">{item.product.nama_produk || "Produk Tanpa Nama"}</h3>
-                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                <h3 className="text-base font-semibold leading-tight sm:text-lg">{item.product.nama_produk || "Produk Tanpa Nama"}</h3>
+                                <p className="mt-1 text-xs text-muted-foreground line-clamp-2 sm:text-sm">
                                   {item.product.deskripsi || "Tidak ada deskripsi"}
                                 </p>
                               </div>
-                              <Button variant="ghost" size="icon" onClick={() => removeItem(item.product.id)} className="text-destructive">
+                              <Button variant="ghost" size="icon" onClick={() => removeItem(item.product.id)} className="h-8 w-8 text-destructive sm:h-9 sm:w-9">
                                 <TrashIcon className="h-4 w-4" />
                               </Button>
                             </div>
 
-                            <div className="flex items-center justify-between mt-auto">
+                            <div className="mt-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                               <div>
-                                <p className="text-lg font-bold text-primary">
+                                <p className="text-base font-bold text-primary sm:text-lg">
                                   {/* Prioritaskan harga_formatted, fallback ke hitung manual */}
                                   {item.product.harga_formatted || formatPrice(item.product.harga_grosir)}
                                 </p>
                                 <p className="text-xs text-muted-foreground">per unit</p>
                               </div>
 
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2 border rounded-md">
+                              <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end sm:gap-3">
+                                <div className="flex items-center gap-1 rounded-md border sm:gap-2">
                                   <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-8 w-8" 
+                                    className="h-7 w-7 sm:h-8 sm:w-8" 
                                     onClick={() => {
                                       const minOrder = item.product.min_order || 10
                                       const newQuantity = item.quantity - 1
@@ -153,20 +153,21 @@ export default function CartPage() {
                                     }}
                                     disabled={item.quantity <= (item.product.min_order || 10)}
                                   >
-                                    <MinusIcon className="h-4 w-4" />
+                                    <MinusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                   </Button>
-                                  <span className="w-12 text-center font-medium">{item.quantity}</span>
+                                  <span className="w-9 text-center text-sm font-medium sm:w-12 sm:text-base">{item.quantity}</span>
                                   <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-8 w-8" 
+                                    className="h-7 w-7 sm:h-8 sm:w-8" 
                                     onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                                   >
-                                    <PlusIcon className="h-4 w-4" />
+                                    <PlusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                   </Button>
                                 </div>
-                                <div className="text-right hidden sm:block">
-                                  <p className="text-lg font-bold">
+                                <div className="text-right">
+                                  <p className="text-[11px] text-muted-foreground sm:text-xs">Subtotal</p>
+                                  <p className="text-sm font-bold sm:text-lg">
                                     {formatPrice((item.product.harga_grosir || 0) * item.quantity)}
                                   </p>
                                 </div>
@@ -182,7 +183,7 @@ export default function CartPage() {
 
               {/* RINGKASAN ORDER */}
               <div className="lg:col-span-1">
-                <Card className="sticky top-24">
+                <Card className="lg:sticky lg:top-24">
                   <CardHeader><CardTitle>Order Summary</CardTitle></CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
@@ -193,8 +194,8 @@ export default function CartPage() {
                     </div>
                     <div className="border-t pt-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-lg font-semibold">Total</span>
-                        <span className="text-2xl font-bold text-primary">{formatPrice(getTotalPrice())}</span>
+                        <span className="text-base font-semibold sm:text-lg">Total</span>
+                        <span className="text-xl font-bold text-primary sm:text-2xl">{formatPrice(getTotalPrice())}</span>
                       </div>
                     </div>
                     <div className="space-y-2 pt-4">

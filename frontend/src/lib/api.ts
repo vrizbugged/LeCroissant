@@ -828,6 +828,60 @@ export const ordersApi = {
       return null
     }
   },
+
+  /**
+   * Export orders to formatted Excel (.xlsx)
+   */
+  exportExcel: async (params?: { status?: OrderResource['status']; start_date?: string; end_date?: string }): Promise<boolean> => {
+    try {
+      const queryParams = new URLSearchParams()
+      if (params?.status) queryParams.append('status', params.status)
+      if (params?.start_date) queryParams.append('start_date', params.start_date)
+      if (params?.end_date) queryParams.append('end_date', params.end_date)
+
+      const queryString = queryParams.toString()
+      const endpoint = `${API_BASE_URL}/orders/export${queryString ? `?${queryString}` : ''}`
+
+      const token = typeof window !== 'undefined' ? getAuthToken() : null
+      const headers: Record<string, string> = {
+        Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers,
+      })
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({
+          message: `Request failed: ${response.statusText}`,
+        }))
+        throw new Error(error.message || `Request failed: ${response.statusText}`)
+      }
+
+      const blob = await response.blob()
+      const contentDisposition = response.headers.get('content-disposition') || ''
+      const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/)
+      const fileName = fileNameMatch?.[1] || `orders-report-${new Date().toISOString().split('T')[0]}.xlsx`
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+      return true
+    } catch (error) {
+      console.error('Error exporting orders excel:', error)
+      throw error
+    }
+  },
 }
 
 // Users API

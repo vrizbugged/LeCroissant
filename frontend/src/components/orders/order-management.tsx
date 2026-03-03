@@ -189,14 +189,6 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
     })
   }
 
-  const formatDateForCSV = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    })
-  }
-
   // Check if order is new (created within last 24 hours) and not viewed
   const isOrderNew = (orderId: number, createdAt?: string | null): boolean => {
     if (!createdAt) return false
@@ -287,73 +279,13 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
     return filtered
   }, [orders, sortField, sortDirection, statusFilter])
 
-  // Handle export to CSV
-  const handleExport = () => {
+  // Handle export to Excel (.xlsx)
+  const handleExport = async () => {
     try {
-      // Prepare CSV headers
-      const headers = [
-        "Order ID",
-        "Client Name",
-        "Company Name",
-        "Phone Number",
-        "Address",
-        "Delivery Date",
-        "Status",
-        "Total Price",
-        "Special Notes",
-        "Created At",
-        "Updated At"
-      ]
-
-      // Prepare CSV rows
-      const rows = sortedOrders.map((order) => {
-        const clientName = order.client?.name || order.user?.name || 'N/A'
-        const companyName = order.client?.company_name || order.user?.company_name || 'N/A'
-        const phoneNumber = order.client?.phone_number || order.user?.phone_number || 'N/A'
-        const address = order.client?.address || order.user?.address || 'N/A'
-        
-        return [
-          order.id,
-          clientName,
-          companyName,
-          phoneNumber,
-          address,
-          formatDateForCSV(order.delivery_date),
-          getOrderStatusLabel(order),
-          order.total_price.toString(), // Use raw number for CSV
-          order.special_notes || '',
-          formatDateForCSV(order.created_at),
-          formatDateForCSV(order.updated_at),
-        ]
+      await ordersApi.exportExcel({
+        status: statusFilter || undefined,
       })
-
-      // Create CSV content
-      const csv = [
-        headers.join(","),
-        ...rows.map((row) => row.map((cell) => {
-          // Escape quotes and wrap in quotes if contains comma, newline, or quote
-          const cellStr = String(cell || '')
-          if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
-            return `"${cellStr.replace(/"/g, '""')}"`
-          }
-          return cellStr
-        }).join(",")),
-      ].join("\n")
-
-      // Create and download file
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      const today = new Date().toISOString().split('T')[0]
-      const filterSuffix = statusFilter ? `-${statusLabels[statusFilter].replace(/\s+/g, '-')}` : ''
-      a.download = `orders-report-${today}${filterSuffix}.csv`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
-
-      toast.success("Orders report exported successfully")
+      toast.success("Orders report exported successfully (.xlsx)")
     } catch (error) {
       console.error("Error exporting orders:", error)
       toast.error("Failed to export orders report")
@@ -364,16 +296,16 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
     <div className="px-4 lg:px-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Order Management</CardTitle>
               <CardDescription>Manage B2B Orders</CardDescription>
             </div>
-            <div className="flex items-center gap-2"> 
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"> 
               <Button
                 variant="outline"
                 onClick={handleExport}
-                className="gap-2"
+                className="w-full gap-2 sm:w-auto"
               >
                 <FileDown className="h-4 w-4" />
                 Export Report
@@ -402,7 +334,7 @@ export function OrderManagement({ initialOrders }: OrderManagementProps) {
                   }
                 }}
               >
-                <SelectTrigger className="w-[220px]">
+                <SelectTrigger className="w-full sm:w-[220px]">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
 

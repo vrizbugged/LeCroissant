@@ -68,7 +68,7 @@ type CheckoutFormValues = z.infer<typeof checkoutFormSchema>
 const BANK_INFO = {
   bankName: "Bank BCA",
   accountNumber: "1234567890",
-  accountHolder: "PT Le Croissant",
+  accountHolder: "Le Croissant",
 }
 const SALES_CONTACT_URL = "https://api.whatsapp.com/send/?phone=6282247644041&text&type=phone_number&app_absent=0"
 
@@ -400,26 +400,26 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-8 pt-24 md:pt-28">
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 sm:gap-6">
           {/* Header */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-3 sm:items-center sm:gap-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => router.push("/cart")}
-              className="text-muted-foreground hover:text-foreground"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground sm:h-10 sm:w-10"
             >
               <ArrowLeftIcon className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Checkout</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Checkout</h1>
+              <p className="mt-1 text-sm text-muted-foreground sm:text-base">
                 Complete contact information and upload payment proof to complete your order
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
             {/* Checkout Form */}
             <div className="lg:col-span-2 space-y-6">
               <Form {...form}>
@@ -562,7 +562,7 @@ export default function CheckoutPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {/* Informasi Rekening Bank */}
-                      <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 space-y-4">
+                      <div className="space-y-4 rounded-lg border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-950/20 sm:p-4">
                         <div className="flex items-center gap-2">
                           <Building2Icon className="h-5 w-5 text-orange-600" />
                           <h3 className="font-semibold text-sm text-orange-900 dark:text-orange-100">
@@ -570,14 +570,14 @@ export default function CheckoutPage() {
                           </h3>
                         </div>
                         <div className="space-y-3 text-sm">
-                          <div className="flex items-center gap-4">
-                            <span className="text-muted-foreground min-w-[120px] font-medium">Bank</span>
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+                            <span className="min-w-[120px] text-xs font-medium text-muted-foreground sm:text-sm">Bank</span>
                             <span className="font-semibold text-foreground">{BANK_INFO.bankName}</span>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <span className="text-muted-foreground min-w-[120px] font-medium">Account Number</span>
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+                            <span className="min-w-[120px] text-xs font-medium text-muted-foreground sm:text-sm">Account Number</span>
                             <div className="flex items-center gap-2">
-                              <span className="font-mono font-semibold text-orange-600 dark:text-orange-400">
+                              <span className="font-mono text-sm font-semibold text-orange-600 dark:text-orange-400 sm:text-base">
                                 {formatAccountNumber(BANK_INFO.accountNumber)}
                               </span>
                               <Button
@@ -592,8 +592,8 @@ export default function CheckoutPage() {
                               </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <span className="text-muted-foreground min-w-[120px] font-medium">Account Holder</span>
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+                            <span className="min-w-[120px] text-xs font-medium text-muted-foreground sm:text-sm">Account Holder</span>
                             <span className="font-semibold text-foreground">{BANK_INFO.accountHolder}</span>
                           </div>
                         </div>
@@ -659,7 +659,7 @@ export default function CheckoutPage() {
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                                  <div className="rounded-lg border-2 border-dashed p-4 text-center sm:p-6">
                                     <UploadIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                                     <p className="text-sm text-muted-foreground mb-2">
                                       Upload payment proof (JPG, PNG, or PDF)
@@ -693,7 +693,7 @@ export default function CheckoutPage() {
                   </Card>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                     <Button
                       type="button"
                       variant="outline"
@@ -723,13 +723,13 @@ export default function CheckoutPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <Card className="sticky top-24">
+              <Card className="lg:sticky lg:top-24">
                 <CardHeader>
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Order Items */}
-                  <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  <div className="max-h-[320px] space-y-3 overflow-y-auto sm:max-h-[400px]">
                     {items.map((item) => (
                       <div key={item.product.id} className="flex gap-3 pb-3 border-b last:border-0">
                         <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
@@ -761,7 +761,7 @@ export default function CheckoutPage() {
                             {item.product.nama_produk}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            {item.quantity} × {formatPrice(item.product.harga_grosir)}
+                            {item.quantity} x {formatPrice(item.product.harga_grosir)}
                           </p>
                           <p className="text-sm font-semibold mt-1">
                             {formatPrice(item.product.harga_grosir * item.quantity)}
@@ -784,8 +784,8 @@ export default function CheckoutPage() {
                   </div>
                   <div className="border-t pt-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold">Total</span>
-                      <span className="text-2xl font-bold text-orange-600">
+                      <span className="text-base font-semibold sm:text-lg">Total</span>
+                      <span className="text-xl font-bold text-orange-600 sm:text-2xl">
                         {formatPrice(totalPrice)}
                       </span>
                     </div>
@@ -845,3 +845,4 @@ export default function CheckoutPage() {
     </div>
   )
 }
+

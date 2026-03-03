@@ -179,7 +179,6 @@ export default function MyTransactionsPage() {
 
   // Get latest order for status tracking
   const latestOrder = orders.length > 0 ? orders[0] : null
-
   // Status steps untuk tracking
   const statusSteps = [
     { key: 'menunggu_konfirmasi' as const, label: 'Menunggu Konfirmasi', icon: Clock },
@@ -192,6 +191,11 @@ export default function MyTransactionsPage() {
     if (status === 'dibatalkan') return -1
     return statusSteps.findIndex(step => step.key === status)
   }
+  const latestOrderStepIndex = latestOrder ? getStatusStepIndex(latestOrder.status) : -1
+  const latestOrderProgressPercent =
+    statusSteps.length > 1
+      ? (Math.max(latestOrderStepIndex, 0) / (statusSteps.length - 1)) * 100
+      : 0
 
   if (loading) {
     return (
@@ -229,8 +233,8 @@ export default function MyTransactionsPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-8 pt-24 md:pt-28">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">My Transactions</h1>
+        <div className="mb-5 sm:mb-6">
+          <h1 className="mb-2 text-2xl font-bold sm:text-3xl">My Transactions</h1>
           <p className="text-muted-foreground">
             Track order status and view your transaction history
           </p>
@@ -254,12 +258,12 @@ export default function MyTransactionsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Section 1: Status Tracking Order Terbaru */}
             {latestOrder && (
               <Card>
                 <CardHeader>
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <CardTitle>New Order Status</CardTitle>
                       <CardDescription>
@@ -285,65 +289,98 @@ export default function MyTransactionsPage() {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-4 sm:space-y-6">
                   {/* Status Progress Indicator - hanya tampil jika tidak dibatalkan */}
                   {latestOrder.status !== 'dibatalkan' && (
-                    <div className="relative">
-                      <div className="flex items-center justify-between">
-                      {statusSteps.map((step, index) => {
-                      const currentStepIndex = getStatusStepIndex(latestOrder.status)
-                      const isActive = index <= currentStepIndex
-                      const isCurrent = index === currentStepIndex
-                      const Icon = step.icon
+                    <div className="space-y-3">
+                      {/* Mobile: compact */}
+                      <div className="sm:hidden">
+                        <div className="relative">
+                          <div className="absolute left-[12.5%] right-[12.5%] top-4 h-0.5 bg-muted/80" />
+                          <div
+                            className="absolute left-[12.5%] top-4 h-0.5 bg-orange-600 transition-all duration-300"
+                            style={{ width: `${latestOrderProgressPercent * 0.75}%` }}
+                          />
+                          <div className="relative z-10 grid grid-cols-4 gap-1">
+                          {statusSteps.map((step, index) => {
+                            const isActive = index <= latestOrderStepIndex
+                            const Icon = step.icon
 
-                      return (
-                        <React.Fragment key={step.key}>
-                          <div className="flex flex-col items-center flex-1">
-                            {/* 1. ICON LINGKARAN (HIJAU jika Selesai, ORANGE jika lainnya) */}
-                            <div
-                              className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-colors ${
-                                isActive
-                                  ? step.key === 'selesai'
-                                    ? 'bg-green-600 border-green-600 text-white'
-                                    : 'bg-orange-600 border-orange-600 text-white'
-                                  : 'bg-background border-muted text-muted-foreground'
-                              }`}
-                            >
-                              <Icon className="h-6 w-6" />
-                            </div>
-
-                            {/* 2. LABEL TEKS DI BAWAH ICON */}
-                            <p
-                              className={`mt-2 text-sm font-medium text-center ${
-                                isActive ? 'text-foreground' : 'text-muted-foreground'
-                              }`}
-                            >
-                              {step.label}
-                            </p>
-
-                            {/* 3. BADGE STATUS (Dinamis: Teks & Warna) */}
-                            {isCurrent && (
-                              <Badge
-                                className={`mt-1 text-white ${
-                                  step.key === 'selesai' ? 'bg-green-600' : 'bg-orange-600'
-                                }`}
-                              >
-                                {step.key === 'selesai' ? 'Pesanan Selesai' : 'Status Saat Ini'}
-                              </Badge>
-                            )}
+                            return (
+                              <div key={step.key} className="relative flex flex-col items-center text-center">
+                                <div className="relative z-10 flex flex-col items-center">
+                                  <div
+                                    className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
+                                      isActive
+                                        ? step.key === 'selesai'
+                                          ? 'bg-green-600 border-green-600 text-white'
+                                          : 'bg-orange-600 border-orange-600 text-white'
+                                        : 'bg-background border-muted text-muted-foreground'
+                                    }`}
+                                  >
+                                    <Icon className="h-4 w-4" />
+                                  </div>
+                                  <p
+                                    className={`mt-1 text-[11px] leading-tight ${
+                                      isActive ? 'text-foreground' : 'text-muted-foreground'
+                                    }`}
+                                  >
+                                    {step.label}
+                                  </p>
+                                </div>
+                              </div>
+                            )
+                          })}
                           </div>
+                        </div>
+                      </div>
 
-                          {/* 4. GARIS PENGHUBUNG ANTAR STEP */}
-                          {index < statusSteps.length - 1 && (
-                            <div
-                              className={`flex-1 h-0.5 mx-2 ${
-                                isActive ? 'bg-orange-600' : 'bg-muted'
-                              }`}
-                            />
-                          )}
-                        </React.Fragment>
-                      )
-                    })}
+                      {/* Desktop: normal */}
+                      <div className="hidden sm:block">
+                        <div className="relative">
+                          <div className="absolute left-[12.5%] right-[12.5%] top-6 h-0.5 bg-muted/80" />
+                          <div
+                            className="absolute left-[12.5%] top-6 h-0.5 bg-orange-600 transition-all duration-300"
+                            style={{ width: `${latestOrderProgressPercent * 0.75}%` }}
+                          />
+                          <div className="relative z-10 grid grid-cols-4 gap-2">
+                          {statusSteps.map((step, index) => {
+                            const isActive = index <= latestOrderStepIndex
+                            const Icon = step.icon
+
+                            return (
+                              <div key={step.key} className="relative flex flex-col items-center">
+                                <div className="relative z-10 flex flex-col items-center">
+                                  <div
+                                    className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-colors ${
+                                      isActive
+                                        ? step.key === 'selesai'
+                                          ? 'bg-green-600 border-green-600 text-white'
+                                          : 'bg-orange-600 border-orange-600 text-white'
+                                        : 'bg-background border-muted text-muted-foreground'
+                                    }`}
+                                  >
+                                    <Icon className="h-6 w-6" />
+                                  </div>
+                                  <p
+                                    className={`mt-2 text-sm font-medium text-center ${
+                                      isActive ? 'text-foreground' : 'text-muted-foreground'
+                                    }`}
+                                  >
+                                    {step.label}
+                                  </p>
+                                </div>
+                              </div>
+                            )
+                          })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-center">
+                        <Badge variant="outline" className="text-xs">
+                          Status: {getClientOrderStatusLabel(latestOrder)}
+                        </Badge>
                       </div>
                     </div>
                   )}
@@ -395,12 +432,12 @@ export default function MyTransactionsPage() {
                       </div>
                     )}
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                       {canClientConfirmPickup(latestOrder) && (
                         <Button
                           onClick={() => handleConfirmPickup(latestOrder.id)}
                           disabled={confirmingPickupId === latestOrder.id}
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                          className="w-full bg-green-600 hover:bg-green-700 text-white sm:w-auto"
                         >
                           {confirmingPickupId === latestOrder.id ? (
                             <>
@@ -424,7 +461,7 @@ export default function MyTransactionsPage() {
                       ) : (
                         <Button
                           onClick={() => handleOpenInvoice(latestOrder)}
-                          className="bg-orange-600 hover:bg-orange-700 text-white"
+                          className="w-full bg-orange-600 hover:bg-orange-700 text-white sm:w-auto"
                         >
                           <Printer className="h-4 w-4 mr-2" />
                           Print Invoice
@@ -439,7 +476,7 @@ export default function MyTransactionsPage() {
                       <h4 className="font-semibold mb-3">Product Details</h4>
                       <div className="space-y-2">
                         {latestOrder.products.map((product) => (
-                          <div key={product.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                          <div key={product.id} className="flex flex-col gap-2 rounded bg-muted/50 p-2 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-3">
                               {product.image_url && (
                                 <img
@@ -451,11 +488,11 @@ export default function MyTransactionsPage() {
                               <div>
                                 <div className="font-medium text-sm">{product.name}</div>
                                 <div className="text-xs text-muted-foreground">
-                                  {product.pivot.quantity} × {formatCurrency(product.pivot.price_at_purchase)}
+                                  {product.pivot.quantity} x {formatCurrency(product.pivot.price_at_purchase)}
                                 </div>
                               </div>
                             </div>
-                            <div className="font-medium">
+                            <div className="text-sm font-medium sm:text-base">
                               {formatCurrency(product.pivot.quantity * product.pivot.price_at_purchase)}
                             </div>
                           </div>
@@ -470,12 +507,12 @@ export default function MyTransactionsPage() {
             {/* Section 2: Histori Transaksi */}
             {orders.length > 1 && (
               <div>
-                <h2 className="text-2xl font-bold mb-4">Transaction History</h2>
+                <h2 className="mb-3 text-xl font-bold sm:mb-4 sm:text-2xl">Transaction History</h2>
                 <div className="space-y-4">
                   {orders.slice(1).map((order) => (
                   <Card key={order.id} className="overflow-hidden">
                     <CardHeader className="bg-muted/50">
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-lg flex items-center gap-2">
@@ -499,12 +536,12 @@ export default function MyTransactionsPage() {
                             Dibuat pada {formatDate(order.created_at)}
                           </CardDescription>
                         </div>
-                        <Badge className={statusColors[order.status]}>
+                        <Badge className={`${statusColors[order.status]} w-fit`}>
                           {getClientOrderStatusLabel(order)}
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="pt-6">
+                    <CardContent className="pt-4 sm:pt-6">
                       <div className="space-y-4">
                         {/* Order Details */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -537,8 +574,8 @@ export default function MyTransactionsPage() {
                         {order.products && order.products.length > 0 && isOrderExpanded(order.id) && (
                           <div>
                             <h4 className="font-semibold mb-3">Product Details</h4>
-                            <div className="border rounded-lg overflow-hidden">
-                              <Table>
+                            <div className="overflow-x-auto rounded-lg border">
+                              <Table className="min-w-[680px]">
                                 <TableHeader>
                                   <TableRow>
                                     <TableHead>Product</TableHead>
@@ -619,12 +656,12 @@ export default function MyTransactionsPage() {
                             </div>
                           )}
 
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                             {canClientConfirmPickup(order) && (
                               <Button
                                 onClick={() => handleConfirmPickup(order.id)}
                                 disabled={confirmingPickupId === order.id}
-                                className="bg-green-600 hover:bg-green-700 text-white"
+                                className="w-full bg-green-600 hover:bg-green-700 text-white sm:w-auto"
                               >
                                 {confirmingPickupId === order.id ? (
                                   <>
@@ -678,3 +715,4 @@ export default function MyTransactionsPage() {
     </div>
   )
 }
+

@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Search, Trash2, Edit, Shield, UserPlus, Mail, User, CheckCircle2 } from "lucide-react"
+import { Plus, Search, Trash2, Edit, Shield, UserPlus, Mail, User, CheckCircle2, X } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 // ScrollArea component - simple implementation
@@ -226,6 +226,15 @@ export default function RolesPage() {
     }
   }
 
+  const handleClearSelectedUser = () => {
+    setSelectedUser(null)
+    setUserEmail("")
+    setSelectedRoleForUser("")
+    setUserSuggestions([])
+    setShowSuggestions(false)
+    inputRef.current?.focus()
+  }
+
   // Assign role to user
   const handleAssignRole = async () => {
     if (!selectedUser) {
@@ -338,15 +347,15 @@ export default function RolesPage() {
       </div>
 
       <Tabs defaultValue="crud" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid h-auto w-full grid-cols-1 sm:max-w-md sm:grid-cols-2">
           <TabsTrigger value="crud">CRUD Role & Permission</TabsTrigger>
           <TabsTrigger value="assign">Assign Role to User</TabsTrigger>
         </TabsList>
 
         {/* Tab 1: CRUD Role & Permission */}
         <TabsContent value="crud" className="space-y-4">
-          <div className="flex items-center justify-end">
-            <Button onClick={handleCreate}>
+          <div className="flex w-full sm:justify-end">
+            <Button onClick={handleCreate} className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Add Role
             </Button>
@@ -533,6 +542,10 @@ export default function RolesPage() {
                       placeholder="Type user email, example: edward@example.com"
                       value={userEmail}
                       onChange={(e) => {
+                        if (selectedUser) {
+                          setSelectedUser(null)
+                          setSelectedRoleForUser("")
+                        }
                         setUserEmail(e.target.value)
                         setShowSuggestions(true)
                       }}
@@ -598,6 +611,16 @@ export default function RolesPage() {
                         </div>
                       )}
                     </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleClearSelectedUser}
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      title="Clear selected user"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
 
                   <div className="space-y-2">

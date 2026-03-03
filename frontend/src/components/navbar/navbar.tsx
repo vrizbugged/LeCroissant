@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, LogIn, ShoppingCartIcon, Navigation, BookOpenText, Store, ShoppingBasket, House, User, Receipt, UserPlus, Bell } from "lucide-react"
+import { LogOut, LogIn, ShoppingCartIcon, Navigation, BookOpenText, Store, ShoppingBasket, House, User, Receipt, UserPlus, Bell, Menu } from "lucide-react"
 import { authApi, ordersApi } from "@/lib/api"
 import type { UserResource, OrderResource } from "@/types/api"
 
@@ -233,6 +233,24 @@ export function Navbar() {
     router.push("/")
   }
 
+  const handleSectionNav = (sectionId: "about-us" | "how-to-order" | "visit-us") => {
+    if (window.location.pathname === "/") {
+      const element = document.getElementById(sectionId)
+      if (element) {
+        const offset = 100
+        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+        const offsetPosition = elementPosition - offset
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth",
+        })
+      }
+      return
+    }
+
+    window.location.href = `/#${sectionId}`
+  }
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm bg-white/50 border-b border-white/20">
       <div className="container mx-auto px-4">
@@ -267,25 +285,7 @@ export function Navbar() {
               <Button 
                 variant="ghost" 
                 className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20"
-                onClick={() => {
-                  if (window.location.pathname === '/') {
-                    // If already on home page, scroll to section
-                    const element = document.getElementById('about-us')
-                    if (element) {
-                      const offset = 100 // Account for fixed navbar
-                      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
-                      const offsetPosition = elementPosition - offset
-                      
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                      })
-                    }
-                  } else {
-                    // If on different page, navigate to home with hash
-                    window.location.href = '/#about-us'
-                  }
-                }}
+                onClick={() => handleSectionNav("about-us")}
               >
                 <Store className="h-4 w-4 mr-1" />
                 About Us
@@ -295,25 +295,7 @@ export function Navbar() {
               <Button 
                 variant="ghost" 
                 className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20"
-                onClick={() => {
-                  if (window.location.pathname === '/') {
-                    // If already on home page, scroll to section
-                    const element = document.getElementById('how-to-order')
-                    if (element) {
-                      const offset = 100 // Account for fixed navbar
-                      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
-                      const offsetPosition = elementPosition - offset
-                      
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                      })
-                    }
-                  } else {
-                    // If on different page, navigate to home with hash
-                    window.location.href = '/#how-to-order'
-                  }
-                }}
+                onClick={() => handleSectionNav("how-to-order")}
               >
                 <BookOpenText className="h-4 w-4 mr-1" />
                 How To Order
@@ -323,25 +305,7 @@ export function Navbar() {
               <Button 
                 variant="ghost" 
                 className="text-sm font-medium text-black hover:text-black/90 hover:bg-black/20"
-                onClick={() => {
-                  if (window.location.pathname === '/') {
-                    // If already on home page, scroll to section
-                    const element = document.getElementById('visit-us')
-                    if (element) {
-                      const offset = 100 // Account for fixed navbar
-                      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
-                      const offsetPosition = elementPosition - offset
-                      
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                      })
-                    }
-                  } else {
-                    // If on different page, navigate to home with hash
-                    window.location.href = '/#visit-us'
-                  }
-                }}
+                onClick={() => handleSectionNav("visit-us")}
               >
                 <Navigation className="h-4 w-4 mr-1" />
                 Visit Us
@@ -359,6 +323,46 @@ export function Navbar() {
 
           {/* --- BAGIAN KANAN: Cart & User Dropdown --- */}
           <div className="flex items-center gap-2 pr-4 md:pr-6">
+            {/* Mobile Navigation Menu */}
+            <div className="md:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-sm bg-white border-white/30 text-orange-600 hover:bg-black/20 hover:text-orange-700 shadow-sm"
+                  >
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={handleHomeClick}>
+                    <House className="mr-2 h-4 w-4" />
+                    Home
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSectionNav("about-us")}>
+                    <Store className="mr-2 h-4 w-4" />
+                    About Us
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSectionNav("how-to-order")}>
+                    <BookOpenText className="mr-2 h-4 w-4" />
+                    How To Order
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSectionNav("visit-us")}>
+                    <Navigation className="mr-2 h-4 w-4" />
+                    Visit Us
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/shop" className="flex items-center cursor-pointer">
+                      <ShoppingBasket className="mr-2 h-4 w-4" />
+                      Shop
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
             {/* Cart Icon */}
             <Link href="/cart">
               <Button

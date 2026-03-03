@@ -88,7 +88,7 @@ export function MostOrderedShowcase() {
   }
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-background to-muted/20 py-20">
+    <section className="relative overflow-hidden bg-gradient-to-b from-background to-muted/20 py-14 sm:py-20">
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-0 left-0 w-96 h-96 bg-orange-500 rounded-full blur-3xl"></div>
@@ -98,7 +98,7 @@ export function MostOrderedShowcase() {
       <div className="container mx-auto px-4 relative z-10">
         <div className="mx-auto max-w-7xl">
           <ScrollReveal>
-            <div className="mb-12 text-center">
+            <div className="mb-8 text-center sm:mb-12">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -108,17 +108,17 @@ export function MostOrderedShowcase() {
                 <TrendingUp className="w-4 h-4" />
                 <span className="text-sm font-medium">Trending</span>
               </motion.div>
-              <h2 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
+              <h2 className="mb-3 text-3xl font-bold tracking-tight sm:mb-4 sm:text-5xl">
                 Most Ordered Products
               </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="mx-auto max-w-2xl text-sm text-muted-foreground sm:text-lg">
                 Our Clients Love this very much. Check it out!
               </p>
             </div>
           </ScrollReveal>
 
           <motion.div
-            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto"
+            className="mx-auto grid max-w-5xl gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -136,7 +136,7 @@ export function MostOrderedShowcase() {
                   {/* Badge untuk produk terpopuler */}
                   {index < 3 && (
                     <Badge
-                      className="absolute top-4 left-4 z-10 bg-orange-500 hover:bg-orange-600 text-white"
+                      className="absolute left-3 top-3 z-10 text-xs bg-orange-500 text-white hover:bg-orange-600 sm:left-4 sm:top-4"
                       variant="default"
                     >
                       #{index + 1} Trending
@@ -145,7 +145,7 @@ export function MostOrderedShowcase() {
 
                   <CardContent className="p-0">
                     {/* Image Container */}
-                    <div className="relative h-64 w-full overflow-hidden bg-muted">
+                    <div className="relative h-40 w-full overflow-hidden bg-muted sm:h-64">
                       {product.image_url ? (
                         <img
                           src={product.image_url}
@@ -196,23 +196,23 @@ export function MostOrderedShowcase() {
                     </div>
 
                     {/* Content */}
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold mb-2 line-clamp-1 group-hover:text-orange-600 transition-colors">
+                    <div className="p-4 sm:p-6">
+                      <h3 className="mb-1 line-clamp-1 text-base font-bold transition-colors group-hover:text-orange-600 sm:mb-2 sm:text-xl">
                         {product.nama_produk}
                       </h3>
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      <p className="mb-3 line-clamp-2 text-xs text-muted-foreground sm:mb-4 sm:text-sm">
                         {product.deskripsi}
                       </p>
 
-                      <div className="mb-4">
-                        <p className="text-2xl font-bold text-orange-600">
+                      <div className="mb-3 sm:mb-4">
+                        <p className="text-lg font-bold text-orange-600 sm:text-2xl">
                           {product.harga_formatted}
                         </p>
                         <p className="text-xs text-muted-foreground">per unit</p>
                       </div>
 
                       <Button
-                        className="w-full group-hover:bg-orange-600 group-hover:text-white transition-all"
+                        className="h-9 w-full text-sm transition-all group-hover:bg-orange-600 group-hover:text-white sm:h-10"
                         variant="outline"
                         onClick={() => {
                           // Check if user is authenticated
@@ -228,7 +228,7 @@ export function MostOrderedShowcase() {
                           toast.success(`${product.nama_produk} ditambahkan ke keranjang (${minOrder} unit)`)
                         }}
                       >
-                        <ShoppingCart className="mr-2 w-4 h-4" />
+                        <ShoppingCart className="mr-2 h-4 w-4" />
                         Add to cart
                       </Button>
                     </div>

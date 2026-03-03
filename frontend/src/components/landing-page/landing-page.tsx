@@ -102,7 +102,7 @@ export function LandingPage() {
             src="/image/almondbg.png"
             alt="Freshly baked goods background"
             fill
-            className="object-cover"
+            className="object-cover object-[72%_center] md:object-center"
             priority
           />
           {/* Animated Gradient Overlay */}
@@ -121,6 +121,8 @@ export function LandingPage() {
               ease: "easeInOut",
             }}
           />
+          {/* Mobile readability overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/92 via-white/70 to-white/10 md:from-black/10 md:via-transparent md:to-black/10" />
         </motion.div>
 
         {/* Floating Decorative Elements */}
@@ -144,7 +146,7 @@ export function LandingPage() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="text-left max-w-2xl"
+              className="text-left max-w-2xl rounded-2xl bg-white/72 p-4 backdrop-blur-[1px] sm:p-6 md:rounded-none md:bg-transparent md:p-0 md:backdrop-blur-0"
             >
               <motion.h1 
                 variants={itemVariants}
@@ -168,9 +170,9 @@ export function LandingPage() {
               </motion.h1>
               <motion.p 
                 variants={itemVariants}
-                className="mb-8 text-lg text-muted-foreground sm:text-xl md:text-2xl"
+                className="mb-8 max-w-xl text-base leading-relaxed text-slate-700 sm:text-lg md:text-xl"
               >
-                Delight in flavors crafted with care-made fresh daily to give you the perfect experience, every time.
+                Delight in flavors crafted with care, made fresh daily to deliver the perfect experience every time.
               </motion.p>
               <motion.div 
                 variants={itemVariants}
@@ -207,21 +209,21 @@ export function LandingPage() {
       <Separator />
 
       {/* Features Section */}
-      <section id="about-us" className="container mx-auto px-4 py-20 scroll-mt-24">
+      <section id="about-us" className="container mx-auto px-4 py-14 sm:py-20 scroll-mt-24">
         <div className="mx-auto max-w-6xl">
           <ScrollReveal>
-            <div className="mb-12 text-center">
-              <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
+            <div className="mb-8 text-center sm:mb-12">
+              <h2 className="mb-3 text-2xl font-bold tracking-tight sm:mb-4 sm:text-4xl">
                 About Us
               </h2>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-sm text-muted-foreground sm:text-lg">
                 Everything you need to scale up your business
               </p>
             </div>
           </ScrollReveal>
 
           <motion.div 
-            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+            className="grid gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -269,25 +271,25 @@ export function LandingPage() {
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
                 <Card className="h-full border-2 hover:border-orange-500/50 transition-all duration-300 hover:shadow-xl cursor-pointer group bg-background">
-                  <CardHeader>
+                  <CardHeader className="p-4 sm:p-6">
                     <motion.div 
-                      className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500/20 to-orange-600/20 group-hover:from-orange-500/30 group-hover:to-orange-600/30 transition-all duration-300"
+                      className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500/20 to-orange-600/20 transition-all duration-300 group-hover:from-orange-500/30 group-hover:to-orange-600/30 sm:h-12 sm:w-12"
                       whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.1 }}
                       transition={{ duration: 0.5 }}
                     >
-                      <feature.icon className="h-6 w-6 text-orange-600 group-hover:text-orange-500 transition-colors" />
+                      <feature.icon className="h-5 w-5 text-orange-600 transition-colors group-hover:text-orange-500 sm:h-6 sm:w-6" />
                     </motion.div>
-                    <CardTitle className="group-hover:text-orange-600 transition-colors">{feature.title}</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-lg transition-colors group-hover:text-orange-600 sm:text-xl">{feature.title}</CardTitle>
+                    <CardDescription className="text-sm">
                       {feature.description}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
+                  <CardContent className="px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
+                    <ul className="space-y-1.5 sm:space-y-2">
                       {feature.items.map((item, idx) => (
                         <motion.li 
                           key={idx}
-                          className="flex items-center gap-2 text-sm"
+                          className="flex items-center gap-2 text-xs sm:text-sm"
                           initial={{ opacity: 0, x: -10 }}
                           whileInView={{ opacity: 1, x: 0 }}
                           transition={{ delay: feature.delay + idx * 0.1 }}
@@ -309,14 +311,14 @@ export function LandingPage() {
       <Separator />
 
       {/* How to Order Section */}
-      <section id="how-to-order" className="container mx-auto px-4 py-20 bg-gradient-to-b from-background to-muted/30 scroll-mt-24">
+      <section id="how-to-order" className="container mx-auto px-4 py-14 sm:py-20 bg-gradient-to-b from-background to-muted/30 scroll-mt-24">
         <div className="mx-auto max-w-6xl">
           <ScrollReveal>
-            <div className="mb-12 text-center">
-              <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
+            <div className="mb-8 text-center sm:mb-12">
+              <h2 className="mb-3 text-2xl font-bold tracking-tight sm:mb-4 sm:text-4xl">
                 How to Order
               </h2>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-sm text-muted-foreground sm:text-lg">
                 Simple steps to get your fresh pastries delivered
               </p>
             </div>
@@ -334,7 +336,7 @@ export function LandingPage() {
             />
 
             <motion.div 
-              className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 relative z-10"
+              className="relative z-10 grid gap-4 sm:gap-8 md:grid-cols-2 lg:grid-cols-4"
               variants={containerVariants}
               initial="hidden"
               whileInView="visible"
@@ -386,10 +388,10 @@ export function LandingPage() {
                   className="relative"
                 >
                   <Card className="h-full border-2 hover:border-orange-500/50 transition-all duration-300 hover:shadow-xl cursor-pointer group bg-background">
-                    <CardHeader className="text-center pb-4">
+                    <CardHeader className="pb-3 text-center sm:pb-4">
                       {/* Step Number Badge with Pulse Animation */}
                       <motion.div 
-                        className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white flex items-center justify-center font-bold text-sm shadow-lg z-20"
+                        className="absolute -top-4 left-1/2 z-20 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-xs font-bold text-white shadow-lg sm:h-8 sm:w-8 sm:text-sm"
                         animate={{
                           scale: [1, 1.1, 1],
                         }}
@@ -405,19 +407,19 @@ export function LandingPage() {
 
                       {/* Icon Container */}
                       <motion.div 
-                        className={`mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl ${item.bgColor} group-hover:scale-110 transition-transform duration-300`}
+                        className={`mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl ${item.bgColor} transition-transform duration-300 group-hover:scale-110 sm:mb-4 sm:h-20 sm:w-20`}
                         whileHover={{ rotate: [0, -10, 10, 0] }}
                         transition={{ duration: 0.5 }}
                       >
-                        <item.icon className={`h-10 w-10 ${item.iconColor} transition-transform`} />
+                        <item.icon className={`h-7 w-7 ${item.iconColor} transition-transform sm:h-10 sm:w-10`} />
                       </motion.div>
 
-                      <CardTitle className="text-xl group-hover:text-orange-600 transition-colors">
+                      <CardTitle className="text-base transition-colors group-hover:text-orange-600 sm:text-xl">
                         {item.title}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="text-center pt-0">
-                      <CardDescription className="text-sm leading-relaxed">
+                      <CardDescription className="text-xs leading-relaxed sm:text-sm">
                         {item.description}
                       </CardDescription>
                     </CardContent>
